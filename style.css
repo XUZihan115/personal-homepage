@@ -1,0 +1,213 @@
+/* ===== 基础重置与变量 ===== */
+:root {
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --text: #1f2933;
+  --muted: #6b7280;
+  --brand: #2563eb;
+  --brand-soft: #dbeafe;
+  --border: #e5e7eb;
+  --radius: 12px;
+  --container: 900px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.container {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.highlight {
+  color: var(--brand);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* ===== 导航栏 ===== */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  margin-left: 1.2rem;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover {
+  color: var(--brand);
+}
+
+/* ===== Hero 首屏 ===== */
+.hero {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  color: #fff;
+  text-align: center;
+  padding: 80px 0 72px;
+}
+
+.hero h1 {
+  font-size: 2.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.hero .highlight {
+  color: #fff;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.5);
+}
+
+.tagline {
+  font-size: 1.15rem;
+  opacity: 0.95;
+}
+
+.tagline-sub {
+  margin-top: 0.4rem;
+  opacity: 0.8;
+}
+
+.btn {
+  display: inline-block;
+  margin-top: 1.8rem;
+  background: #fff;
+  color: #1e40af;
+  padding: 0.7rem 1.6rem;
+  border-radius: 999px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+/* ===== 通用 section ===== */
+.section {
+  padding: 56px 0;
+}
+
+.section.alt {
+  background: var(--surface);
+}
+
+.section h2 {
+  font-size: 1.7rem;
+  margin-bottom: 1.4rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 3px solid var(--brand);
+  display: inline-block;
+}
+
+/* ===== 卡片 ===== */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.4rem 1.6rem;
+  margin-bottom: 1.2rem;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.section.alt .card {
+  background: var(--bg);
+}
+
+.card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.card h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.3rem;
+}
+
+.card .muted {
+  font-size: 0.9rem;
+}
+
+/* ===== 技能列表 ===== */
+.skill-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.8rem;
+}
+
+.skill-list li {
+  background: var(--brand-soft);
+  color: #1e40af;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* ===== 联系 ===== */
+#contact a {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ===== 页脚 ===== */
+.footer {
+  padding: 28px 0;
+  text-align: center;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 0.9rem;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 560px) {
+  .hero h1 {
+    font-size: 1.9rem;
+  }
+  .nav-links {
+    display: none;
+  }
+}

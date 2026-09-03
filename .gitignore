@@ -1,0 +1,23 @@
+# 依赖与构建产物（纯 HTML 项目通常用不到，保留以防万一）
+node_modules
+dist
+dist-ssr
+
+# 日志
+*.log
+logs
+
+# 深度工作临时文件
+.deepworks/tmp/
+
+# 编辑器 / 系统文件
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.sw?
+
+# 本地环境变量（不要提交敏感信息）
+.env
+.env.local
