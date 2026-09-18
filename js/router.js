@@ -1,26 +1,25 @@
 /* router.js —— 极简 hash 路由
  *
- * 一个 index.html 里同时装着「首页卡片」和五个独立页面：
+ * 一个 index.html 里同时装着「首页卡片」和四个独立页面：
  *   #/ 或空 hash        → 首页（.stage 卡片 + 底部提示）
- *   #/detail #/guestbook #/projects #/contact #/library
+ *   #/detail #/guestbook #/projects #/contact
  *                       → 对应的 .page
  *
  * 切换只改 hidden 和 class，不刷新页面；浏览器的前进 / 后退键也能用。
- * 每个页面还能直接分享链接（比如 .../index.html#/library）。
+ * 每个页面还能直接分享链接（比如 .../index.html#/projects）。
  */
 (function () {
   "use strict";
 
   var D = window.__DIAG || { note: function () {}, err: function () {}, errors: [] };
 
-  var ROUTES = ["detail", "guestbook", "projects", "contact", "library"];
+  var ROUTES = ["detail", "guestbook", "projects", "contact"];
   var TITLES = {
     home: "徐子涵 · 个人主页",
     detail: "详情 · 徐子涵",
     guestbook: "留言 · 徐子涵",
     projects: "项目 · 徐子涵",
     contact: "联系 · 徐子涵",
-    library: "歌库 · 徐子涵",
   };
 
   var stage = null;

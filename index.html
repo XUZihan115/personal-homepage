@@ -62,7 +62,6 @@
           <a href="#/guestbook" data-route="guestbook">留言</a>
           <a href="#/projects" data-route="projects">项目</a>
           <a href="#/contact" data-route="contact">联系</a>
-          <a href="#/library" data-route="library">歌库</a>
         </nav>
       </div>
     </header>
@@ -95,9 +94,6 @@
           <button class="icon-btn" type="button" data-focus="experience" title="看我的经历" aria-label="看我的经历">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg>
           </button>
-          <button class="icon-btn" type="button" data-focus="music" title="播放歌单" aria-label="播放歌单">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="17.5" r="2.5" /><circle cx="18" cy="15.5" r="2.5" /><path d="M9.5 17.5V7l11-2v10.5" /></svg>
-          </button>
           <a class="pill-tag pill-link" href="#/detail" title="看这个主页的详情" aria-label="看详情">
             详情
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg>
@@ -119,57 +115,7 @@
         </div>
       </section>
 
-      <!-- ③ 音乐播放器（模块三：播放歌库清单；也支持把本地文件拖进来试听） -->
-      <section class="card card-music module" id="music" data-card="music" data-nav="music">
-        <div class="card-label">
-          <span>正在播放</span>
-          <span class="label-right dim" id="musicCount">0 首</span>
-        </div>
-        <div class="music-row">
-          <div class="eq" id="eq" aria-hidden="true">
-            <span></span><span></span><span></span><span></span><span></span>
-          </div>
-          <div class="music-title" id="musicTitle">还没有歌</div>
-          <button class="pick" id="musicPick" type="button" title="选择本地音频文件" aria-label="选择本地音频文件">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 16l8-8" /><path d="M15 5h4v4" /><path d="M16.5 13.5V19H5V7.5h5.5" /></svg>
-          </button>
-        </div>
-        <div class="bar" id="musicBar" role="slider" aria-label="播放进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
-          <div class="bar-fill" id="musicFill"></div>
-          <div class="bar-knob" id="musicKnob"></div>
-        </div>
-        <div class="music-time">
-          <span id="musicCur">0:00</span>
-          <span id="musicDur">0:00</span>
-        </div>
-        <div class="music-ctrl">
-          <button class="ctl" id="musicPrev" type="button" title="上一首" aria-label="上一首">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14" /><path d="M19 5l-10 7 10 7z" /></svg>
-          </button>
-          <button class="ctl primary" id="musicPlay" type="button" title="播放 / 暂停" aria-label="播放或暂停">
-            <svg viewBox="0 0 24 24" class="ic-play" aria-hidden="true"><path d="M7 4l13 8-13 8z" /></svg>
-            <!-- 暂停图标必须画成「有面积的色块」：主按钮那份样式是 fill:currentColor + stroke:none，
-                 两条只描边不填充的竖线会变成零面积 → 播放时整颗按钮看着是空的（之前那个 bug）。
-                 所以这里用两个圆角矩形，靠填充上色，跟播放三角是同一套逻辑。 -->
-            <svg viewBox="0 0 24 24" class="ic-pause" aria-hidden="true"><rect x="7.25" y="4.5" width="3.5" height="15" rx="1.75" /><rect x="13.25" y="4.5" width="3.5" height="15" rx="1.75" /></svg>
-          </button>
-          <button class="ctl" id="musicNext" type="button" title="下一首" aria-label="下一首">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14" /><path d="M5 5l10 7-10 7z" /></svg>
-          </button>
-          <button class="ctl toggle" id="musicLoop" type="button" title="单曲循环" aria-label="单曲循环">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 8-8h4" /><path d="M20 12a8 8 0 0 1-8 8H8" /><path d="M14 1.5L17 4l-3 2.5" /><path d="M10 22.5L7 20l3-2.5" /></svg>
-          </button>
-          <div class="vol">
-            <svg viewBox="0 0 24 24" aria-hidden="true" class="vol-ic"><path d="M4 9h3l4.5-3.5v13L7 15H4z" /><path d="M15.5 9.5a3.5 3.5 0 0 1 0 5" /></svg>
-            <input type="range" id="musicVol" min="0" max="100" value="80" aria-label="音量" />
-          </div>
-        </div>
-        <div class="music-hint" id="musicHint"></div>
-        <audio id="audio" preload="metadata"></audio>
-        <input type="file" id="musicFile" accept="audio/*" multiple hidden />
-      </section>
-
-      <!-- ④ 太阳 / 月亮（模块四：点击切换，太阳自转 + 日珥，月亮带环形山） -->
+      <!-- ③ 太阳 / 月亮（模块三：点击切换，太阳自转 + 日珥，月亮带环形山） -->
       <section class="card card-celestial module is-sun" id="celestial" data-card="celestial">
         <div class="card-label">
           <span id="celestialLabel">太阳 · 自转中</span>
@@ -184,7 +130,7 @@
         </div>
       </section>
 
-      <!-- ⑤ 技能（第一版内容：标签胶囊） -->
+      <!-- ④ 技能（第一版内容：标签胶囊） -->
       <section class="card card-skills module" id="skills" data-card="skills" data-nav="skills">
         <div class="card-label"><span>技能与工具</span><span class="label-right dim">2026</span></div>
         <div class="tag-cloud">
@@ -200,7 +146,7 @@
         </div>
       </section>
 
-      <!-- ⑥ 经历（第一版内容） -->
+      <!-- ⑤ 经历（第一版内容） -->
       <section class="card card-exp module" id="experience" data-card="experience" data-nav="experience">
         <div class="card-label"><span>教育与实践</span><span class="label-right dim">2026 —</span></div>
         <ul class="timeline">
@@ -217,7 +163,7 @@
         </ul>
       </section>
 
-      <!-- ⑦ 联系（终端卡片） -->
+      <!-- ⑥ 联系（终端卡片） -->
       <section class="card card-term module" id="contact" data-card="contact" data-nav="contact">
         <div class="term-bar">
           <span class="term-dots" aria-hidden="true"><i></i><i></i><i></i></span>
@@ -226,7 +172,7 @@
         <pre class="term-body" id="termBody"></pre>
       </section>
 
-      <!-- ⑧ 引导条（在中列下方的空地上）：一句话把有意见的人指到留言页去。
+      <!-- ⑦ 引导条（在中列下方的空地上）：一句话把有意见的人指到留言页去。
            故意不加 .card / data-card —— 它不是内容卡片，不参与拖拽，也不进「归位」。 -->
       <aside class="ask-guide" id="askGuide">
         <span class="ask-guide-ic" aria-hidden="true">
@@ -421,13 +367,13 @@
         <article class="proj-card proj-wide">
           <h3>这个主页本身</h3>
           <p class="proj-meta">Vibe Coding · 2026</p>
-          <p>纯 HTML / CSS / JS 从零写起，一版一版改出来的个人主页：可拖拽卡片、汉字笔顺、数码管时钟、太阳与月亮、歌库。</p>
+          <p>纯 HTML / CSS / JS 从零写起，一版一版改出来的个人主页：可拖拽卡片、汉字笔顺、数码管时钟、太阳与月亮。</p>
           <button class="page-btn ghost proj-toggle" type="button" data-open="tech-detail" aria-expanded="false" aria-controls="tech-detail">看技术细节</button>
           <div class="proj-tool" id="tech-detail" hidden>
             <ol class="detail-list">
               <li>
                 <h3>可拖拽的卡片主页</h3>
-                <p>七张卡片绝对定位排成三列，用指针事件实现拖动，位置记在浏览器里；左上角「归位」一键还原，窄屏自动变单列。</p>
+                <p>六张卡片绝对定位排成三列，用指针事件实现拖动，位置记在浏览器里；左上角「归位」一键还原，窄屏自动变单列。</p>
               </li>
               <li>
                 <h3>汉字笔顺</h3>
@@ -440,10 +386,6 @@
               <li>
                 <h3>太阳与月亮</h3>
                 <p>Three.js 写自定义着色器：太阳是程序化日面加日珥弧环和临边昏暗；月亮用 NASA LRO 反照率贴图现场派生高度，做出月海起伏。点一下就能互换。</p>
-              </li>
-              <li>
-                <h3>歌库</h3>
-                <p>曲目清单放在 audio/ 目录，歌库页面按歌名和歌手实时筛选，点一行就能播。</p>
               </li>
             </ol>
           </div>
@@ -477,34 +419,6 @@
         </figure>
       </section>
 
-      <!-- 歌库 -->
-      <section class="page" data-page="library" hidden>
-        <div class="page-head">
-          <h2>歌库</h2>
-          <p class="page-lead">我收藏的歌 · 按歌名或歌手搜索</p>
-        </div>
-        <div class="lib-bar">
-          <svg class="lib-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="M16.2 16.2 21 21" /></svg>
-          <input type="search" id="libSearch" placeholder="搜索歌名 / 歌手…" autocomplete="off" aria-label="搜索歌名或歌手" />
-          <span class="lib-count" id="libCount">0 首</span>
-        </div>
-        <div class="lib-list" id="libList"></div>
-        <p class="lib-empty" id="libEmpty">歌库还空着。</p>
-        <audio id="libAudio" preload="metadata"></audio>
-      </section>
-    </div>
-
-    <!-- ===== 右上角：进页面问一句要不要音乐（默认一声都不出，不点就什么都不发生） ===== -->
-    <div class="music-ask" id="musicAsk" role="dialog" aria-label="背景音乐询问" hidden>
-      <svg class="music-ask-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6.5l10-2V16" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="16.5" cy="16" r="2.5" /></svg>
-      <div class="music-ask-txt">
-        <strong>想不想来点音乐？</strong>
-        <span id="musicAskSub">随机放一首，随时可以停</span>
-      </div>
-      <div class="music-ask-btns">
-        <button class="page-btn" id="musicAskYes" type="button">来一首</button>
-        <button class="page-btn ghost" id="musicAskNo" type="button">不用了</button>
-      </div>
     </div>
 
     <!-- ===== 底部提示 ===== -->
@@ -522,10 +436,8 @@
     <script src="js/hanzi.js"></script>
     <script src="js/sun-moon.js"></script>
     <script src="js/modules.js"></script>
-    <script src="audio/library.js"></script>
     <script src="js/router.js"></script>
     <script src="js/pages.js"></script>
-    <script src="js/library.js"></script>
     <script src="js/tools.js"></script>
     <script src="js/mood.js"></script>
     <script src="js/cursor.js"></script>

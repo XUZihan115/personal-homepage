@@ -1,10 +1,8 @@
 /*!
- * mood.js —— 主页上三件「跟着天色走」的小事
+ * mood.js —— 主页上两件「跟着天色走」的小事
  *
- * ① 音乐询问：进页面默认一声都不出。右上角问一句「想不想来点音乐？」，
- *             点「来一首」→ 从歌库里随机放一首；点「不用了」→ 什么都不发生。
- * ② 背景色调：太阳 / 月亮一换，页面底色和光晕跟着换（body.bg-sun / body.bg-moon）。
- * ③ 联想一下：按钮在「归位」下面。点了就把主页收起来，换上一幅天上的东西相衬的画，
+ * ① 背景色调：太阳 / 月亮一换，页面底色和光晕跟着换（body.bg-sun / body.bg-moon）。
+ * ② 联想一下：按钮在「归位」下面。点了就把主页收起来，换上一幅天上的东西相衬的画，
  *             并在右下角标出作品名和作者。
  *             太阳 / 月亮各有一组画作（太阳 11 幅、月亮 6 幅，都是公有领域或 NASA 素材，且只收横版），
  *             每次按「联想一下」都从当前天色那一组里随机取一幅，不会连着两次给同一幅；
@@ -21,13 +19,7 @@
 
   var D = window.__DIAG || { note: function () {}, err: function () {}, errors: [] };
 
-  var ASK_HOME = 1100; // 首屏：先让卡片落位，再问音乐
-  var ASK_BACK = 700; // 从别的页面切回首页：稍微快一点
-  var ASK_EMPTY = 6000; // 歌库空着时，把话说完自己收起来
-
   var body = document.body;
-  var asked = false; // 一次打开只问一遍
-  var askTimer = 0;
   var muse = false; // 画作模式开着没有
   var phase = ""; // 当前天色：sun / moon
   var el = {};
@@ -36,17 +28,6 @@
 
   function $(id) {
     return document.getElementById(id);
-  }
-
-  function show(node, on) {
-    if (node) node.hidden = !on;
-  }
-
-  function stopTimer() {
-    if (askTimer) {
-      window.clearTimeout(askTimer);
-      askTimer = 0;
-    }
   }
 
   function isHome() {
@@ -218,18 +199,12 @@
     }
   }
 
-  function hideAsk() {
-    stopTimer();
-    show(el.ask, false);
-  }
-
   function setMuse(on) {
     muse = !!on;
     if (!muse) cancelClick(); // 退出的时候，把那还没落地的一下单击丢掉
     if (muse) refreshPainting(); // 每次进来都换一幅，换好了再淡入
     body.classList.toggle("muse", muse);
     if (el.museBtn) el.museBtn.setAttribute("aria-pressed", muse ? "true" : "false");
-    if (muse) hideAsk(); // 看画的时候别再顶着个弹窗
     D.note("mood", { muse: muse, phase: phase });
   }
 
@@ -298,58 +273,9 @@
     );
   }
 
-  /* ---------- ① 音乐询问 ---------- */
-
-  function askMusic(delay) {
-    if (asked || !el.ask || !isHome()) return;
-    stopTimer();
-    askTimer = window.setTimeout(function () {
-      askTimer = 0;
-      if (asked || !isHome()) return;
-      asked = true;
-      show(el.ask, true);
-      D.note("mood", { ask: "shown" });
-    }, delay);
-  }
-
-  function onYes() {
-    var played = false;
-    try {
-      var music = window.Modules && window.Modules.music;
-      if (music && typeof music.playRandom === "function") played = music.playRandom();
-    } catch (e) {
-      D.err("mood.music", e);
-    }
-
-    if (played) {
-      hideAsk();
-      D.note("mood", { ask: "yes" });
-      return;
-    }
-
-    // 歌库和卡片都空着：说一句「还没歌」就够了，别让人以为是页面坏了
-    if (el.sub) el.sub.textContent = "歌库还空着，暂时没歌可放";
-    if (el.yes) el.yes.disabled = true;
-    stopTimer();
-    askTimer = window.setTimeout(function () {
-      askTimer = 0;
-      show(el.ask, false);
-    }, ASK_EMPTY);
-    D.note("mood", { ask: "empty" });
-  }
-
-  function onNo() {
-    hideAsk();
-    D.note("mood", { ask: "no" });
-  }
-
   /* ---------- 启动 ---------- */
 
   function init() {
-    el.ask = $("musicAsk");
-    el.sub = $("musicAskSub");
-    el.yes = $("musicAskYes");
-    el.no = $("musicAskNo");
     el.museBtn = $("museBtn");
     el.resetBtn = $("resetLayout");
     el.paintSun = document.querySelector(".painting-sun");
@@ -360,9 +286,6 @@
     watchPhase();
     guardReset();
     paintingGestures();
-
-    if (el.yes) el.yes.addEventListener("click", onYes);
-    if (el.no) el.no.addEventListener("click", onNo);
 
     if (el.museBtn) {
       el.museBtn.addEventListener("click", function () {
@@ -377,18 +300,12 @@
 
     if (window.Router && typeof window.Router.onChange === "function") {
       window.Router.onChange(function (name) {
-        if (name === "home") {
-          askMusic(ASK_BACK);
-        } else {
-          if (muse) setMuse(false);
-          hideAsk();
-        }
+        if (name !== "home" && muse) setMuse(false);
         syncMuseBtn();
       });
     }
 
     syncMuseBtn();
-    askMusic(ASK_HOME);
     onIdle(function () {
       preload(phase);
     });
