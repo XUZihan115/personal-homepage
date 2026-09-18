@@ -21,3 +21,15 @@ logs
 # 本地环境变量（不要提交敏感信息）
 .env
 .env.local
+
+# 音频文件：不随公开仓库发布
+# 商业歌曲的完整音频传到公开站点属于侵权风险，且体积过大（本机 25 首约 237MB）。
+# 这些文件会一直留在本地、随时可听，只是不会进入 git。
+audio/*.mp3
+audio/*.m4a
+audio/*.aac
+audio/*.ogg
+audio/*.opus
+audio/*.wav
+audio/*.flac
+audio/*.wma

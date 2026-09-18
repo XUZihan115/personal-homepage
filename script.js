@@ -43,7 +43,15 @@
   function boot() {
     var M = window.Modules || {};
     var S = window.SunMoon || {};
+    var R = window.Router || {};
+    var P = window.Pages || {};
+    var L = window.Library || {};
+    var T = window.Tools || {};
+    var Mo = window.Mood || {};
+    var C = window.CursorFX || {};
 
+    /* ⓪ 路由：先按 hash 决定显示首页卡片还是某个独立页面（必须先跑，后面才拿得到正确尺寸） */
+    safe("router", R.init);
     /* ① 卡片自由拖拽 + 位置记忆（最先，保证卡片已就位） */
     safe("layout", M.initLayout);
     /* ② 自我介绍：名字按笔顺书写 → 停顿 → 清空重写，颜色渐变 */
@@ -58,6 +66,16 @@
     safe("nav", M.initNav);
     /* ⑦ 太阳 / 月亮：自转、日珥、环形山，点击切换 */
     safe("celestial", S.init);
+    /* ⑧ 留言板（存本机浏览器） */
+    safe("pages", P.init);
+    /* ⑨ 歌库：清单渲染 + 按歌名/歌手搜索 + 播放 */
+    safe("library", L.init);
+    /* ⑩ 项目页小工具：展开面板 + BMI / 温度 / 进制 / 斐波那契计算 */
+    safe("tools", T.init);
+    /* ⑪ 天色情绪：进页面问一句要不要音乐 + 日/月相衬的底色 +「联想一下」的画作模式 */
+    safe("mood", Mo.init);
+    /* ⑫ 光标：换一套光标图案（在 CSS 里）+ 划过背景时的涟漪（触屏 / 减少动态效果下自动关） */
+    safe("cursorFx", C.init);
 
     /* 页脚年份 */
     var y = document.getElementById("year");

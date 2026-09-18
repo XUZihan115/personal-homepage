@@ -2,10 +2,10 @@
  *
  * 模块一  自我介绍：名字「徐子涵」按真实笔顺逐笔书写，写完停顿 → 清空 → 重写，无限循环，颜色渐变
  * 模块二  当前时间：CSS 七段数码管，秒变化时有翻字闪动
- * 模块三  音乐播放器：拖入 mp3 即可播放（也支持选择文件 / 自动识别 audio/ 目录）
+ * 模块三  音乐播放器：播放歌库清单 audio/library.js（也支持把本地文件拖进来试听）
  * 模块四  太阳与月亮：见 js/sun-moon.js（Three.js 着色器）
  *
- * 另外提供：卡片自由拖拽 + 位置记忆（localStorage）+ 导航高亮卡片。
+ * 另外提供：卡片自由拖拽 + 一键归位（不持久化，刷新即回初始布局）+ 导航高亮卡片。
  */
 (function () {
   "use strict";
@@ -48,38 +48,13 @@
   }
 
   /* ============================================================
-     1. 卡片拖拽系统：自由摆放 + 位置记忆
+     1. 卡片拖拽系统：自由摆放 + 一键归位
+        位置不做持久化 —— 每次刷新页面都回到 CSS 里设计好的初始位置，
+        拖乱之后点左上角「归位」也能立刻回到这套位置。
      ============================================================ */
-  var LAYOUT_KEY = "xzh.home.layout.v1";
   var stage = null;
   var topZ = 30;
-
-  function readLayout() {
-    try {
-      return JSON.parse(window.localStorage.getItem(LAYOUT_KEY) || "{}");
-    } catch (e) {
-      D.err("layout.read", e);
-      return {};
-    }
-  }
-
-  function writeLayout(map) {
-    try {
-      window.localStorage.setItem(LAYOUT_KEY, JSON.stringify(map));
-    } catch (e) {
-      D.err("layout.write", e);
-    }
-  }
-
-  function collectLayout() {
-    var map = {};
-    eachCard(function (card) {
-      if (card.style.left && card.style.left.indexOf("px") > 0) {
-        map[card.id] = { l: Math.round(parseFloat(card.style.left)), t: Math.round(parseFloat(card.style.top)) };
-      }
-    });
-    return map;
-  }
+  var Z_RESET_AT = 400; // 拖来拖去把 z-index 抬得太高时，统一压回基础层
 
   function eachCard(fn) {
     var list = stage.querySelectorAll(".card");
@@ -87,8 +62,24 @@
   }
 
   function bringToFront(card) {
+    if (topZ > Z_RESET_AT) {
+      topZ = 30;
+      eachCard(function (c) {
+        c.style.zIndex = "";
+      });
+    }
     topZ += 1;
     card.style.zIndex = String(topZ);
+  }
+
+  function resetLayout() {
+    eachCard(function (card) {
+      card.style.left = "";
+      card.style.top = "";
+      card.style.zIndex = "";
+      card.classList.remove("flash");
+    });
+    topZ = 30;
   }
 
   function clampCard(card) {
@@ -110,15 +101,8 @@
     stage = document.getElementById("stage");
     if (!stage) throw new Error("找不到 #stage");
 
-    var saved = readLayout();
-    var restored = 0;
+    // 不读任何存档：卡片位置永远从 CSS 的初始布局开始
     eachCard(function (card) {
-      var s = saved[card.id];
-      if (s && typeof s.l === "number" && typeof s.t === "number") {
-        card.style.left = s.l + "px";
-        card.style.top = s.t + "px";
-        restored++;
-      }
       card.classList.add("grab");
       attachDrag(card);
     });
@@ -136,20 +120,13 @@
     var resetBtn = document.getElementById("resetLayout");
     if (resetBtn) {
       resetBtn.addEventListener("click", function () {
-        try {
-          window.localStorage.removeItem(LAYOUT_KEY);
-        } catch (e) {
-          D.err("layout.reset", e);
-        }
-        eachCard(function (card) {
-          card.style.left = "";
-          card.style.top = "";
-        });
+        resetLayout();
         D.note("layout", { reset: true });
       });
     }
 
-    D.note("layout", { cards: stage.querySelectorAll(".card").length, restored: restored, narrow: isNarrow() });
+
+    D.note("layout", { cards: stage.querySelectorAll(".card").length, restored: 0, narrow: isNarrow() });
   }
 
   function attachDrag(card) {
@@ -213,7 +190,6 @@
       document.body.style.userSelect = "";
       drag = null;
       if (moved) {
-        writeLayout(collectLayout());
         // 拖完这一次点击不应该再触发卡片里的按钮/链接
         window.addEventListener(
           "click",
@@ -311,6 +287,8 @@
         stroke: "#fff",
         "stroke-linecap": "round",
         "stroke-linejoin": "round",
+        // 还没写到的笔画必须完全不可见：连圆头笔尖也不能露出来
+        opacity: "0",
       });
       var solid = svgEl("path", { d: pathStr, fill: "#fff", opacity: "0" });
       solid.style.transition = "opacity .14s linear";
@@ -344,6 +322,7 @@
         // 越长的笔画写得越久，最短 0.13s，最长 0.42s
         dur: Math.max(0.13, Math.min(0.42, lineLen / 1650)),
         done: false,
+        shown: false,
         start: 0,
       });
     }
@@ -401,6 +380,8 @@
         for (var i = 0; i < units[u].strokes.length; i++) {
           var st = units[u].strokes[i];
           st.done = false;
+          st.shown = false;
+          st.poly.setAttribute("opacity", "0");
           st.poly.setAttribute("stroke-dashoffset", String(st.len));
           st.solid.setAttribute("opacity", "0");
         }
@@ -441,8 +422,17 @@
             var st2 = strokes[i2];
             var p = (el - st2.start) / st2.dur;
             if (p <= 0) {
+              // 还没开始：整条中线隐藏，避免圆头笔尖在起点留下一个色点
+              if (st2.shown) {
+                st2.poly.setAttribute("opacity", "0");
+                st2.shown = false;
+              }
               st2.poly.setAttribute("stroke-dashoffset", String(st2.len));
             } else if (p >= 1) {
+              if (!st2.shown) {
+                st2.poly.setAttribute("opacity", "1");
+                st2.shown = true;
+              }
               st2.poly.setAttribute("stroke-dashoffset", "0");
               if (!st2.done) {
                 st2.done = true;
@@ -450,6 +440,10 @@
                 drawn++;
               }
             } else {
+              if (!st2.shown) {
+                st2.poly.setAttribute("opacity", "1");
+                st2.shown = true;
+              }
               st2.poly.setAttribute("stroke-dashoffset", String(st2.len * (1 - p)));
             }
           }
@@ -531,25 +525,19 @@
       digits.push(segs);
     }
     var colons = box.querySelectorAll(".seg-colon");
+    // 冒号常亮，不做闪动
+    for (var ci = 0; ci < colons.length; ci++) colons[ci].classList.remove("off");
 
     var dateEl = document.getElementById("clockDate");
     var greetEl = document.getElementById("clockGreet");
     var lastText = "";
-    var scrambleUntil = 0;
     var ticks = 0;
-    var colonOn = true;
-    var lastColonFlip = 0;
 
-    function paint(segs, ch, scramble) {
+    function paint(segs, ch) {
       var on = SEG_MAP[ch] || "";
       for (var s = 0; s < 7; s++) {
         var letter = "abcdefg".charAt(s);
-        var isOn;
-        if (scramble) {
-          isOn = Math.random() < 0.45;
-        } else {
-          isOn = on.indexOf(letter) >= 0;
-        }
+        var isOn = on.indexOf(letter) >= 0;
         if (isOn !== segs[s].classList.contains("on")) {
           segs[s].classList.toggle("on", isOn);
         }
@@ -568,26 +556,15 @@
     Ticker.add(function (dt, now) {
       var d = new Date();
       var text = two(d.getHours()) + ":" + two(d.getMinutes()) + ":" + two(d.getSeconds());
-      var scrambling = now * 1000 < scrambleUntil;
 
       if (text !== lastText) {
-        // 秒一变就闪一下，像老式电子钟翻字
-        scrambleUntil = now * 1000 + 170;
         lastText = text;
         ticks++;
       }
 
       var flat = text.replace(/:/g, "");
       for (var i = 0; i < digits.length; i++) {
-        paint(digits[i], flat.charAt(i), scrambling);
-      }
-
-      if (now - lastColonFlip > 0.5) {
-        lastColonFlip = now;
-        colonOn = !colonOn;
-      }
-      for (var c = 0; c < colons.length; c++) {
-        colons[c].classList.toggle("off", !colonOn);
+        paint(digits[i], flat.charAt(i));
       }
 
       if (dateEl) {
@@ -604,8 +581,11 @@
   }
 
   /* ============================================================
-     4. 模块三：音乐播放器（拖入 mp3 即可播放）
+     4. 模块三：音乐播放器（播放歌库清单 audio/library.js）
      ============================================================ */
+  /* 音乐模块对外的小接口：「想不想来点音乐」那个弹窗要用（在 initMusic 里填上） */
+  var musicApi = { playRandom: null };
+
   function initMusic() {
     var card = document.getElementById("music");
     var audio = document.getElementById("audio");
@@ -644,7 +624,7 @@
     function setTitle() {
       var tr = tracks[index];
       if (!tr) {
-        titleEl.textContent = "还没有歌 · 拖个 mp3 进来";
+        titleEl.textContent = "还没有歌";
         titleEl.classList.add("empty");
       } else {
         titleEl.textContent = tr.name;
@@ -667,6 +647,11 @@
     function play() {
       if (!tracks.length) {
         if (fileInput) fileInput.click();
+        return;
+      }
+      // 刚打开页面时卡片上还没挂 src，先把当前这首挂上再播
+      if (!audio.getAttribute("src")) {
+        load(index, true);
         return;
       }
       var p = audio.play();
@@ -707,29 +692,25 @@
       return added;
     }
 
-    /* ---- 自动识别 audio/ 目录里放好的歌（不需要服务器支持目录列表） ---- */
-    function probeAudioFolder() {
-      var candidates = ["song.mp3", "music.mp3", "1.mp3", "track.mp3", "bgm.mp3", "歌.mp3", "春风吹.mp3"];
-      var i = 0;
-      function next() {
-        if (i >= candidates.length) {
-          if (!tracks.length) hintEl.textContent = "提示：把 mp3 文件拖到这张卡片上，或放进 audio/ 目录（文件名如 song.mp3）后刷新";
-          return;
-        }
-        var name = candidates[i++];
-        var probe = new Audio();
-        probe.preload = "metadata";
-        probe.addEventListener("loadedmetadata", function () {
-          tracks.push({ name: name.replace(/\.[^.]+$/, ""), url: "audio/" + encodeURIComponent(name) });
-          setTitle();
-          hintEl.textContent = "已识别 audio/ 目录里的音乐，点播放试试";
-          D.note("music", { tracks: tracks.length, from: "audio/" });
-          load(tracks.length - 1, false);
-        });
-        probe.addEventListener("error", next);
-        probe.src = "audio/" + encodeURIComponent(name);
+    /* ---- 把歌库清单（audio/library.js 里的 window.AUDIO_LIBRARY）装进卡片 ----
+     * 这是「这首/上一首/下一首」真正的曲目来源：清单是随站点一起发布的，
+     * 所以每个访客打开页面看到的都是同一份歌单。
+     * 这里只登记曲目、不设 src，免得访客一进页面就白白下载一首歌的流量
+     * （点播放时 play() 会把当前这首挂上）。 */
+    function loadLibrary() {
+      var lib = window.AUDIO_LIBRARY || [];
+      for (var i = 0; i < lib.length; i++) {
+        var it = lib[i];
+        if (!it || !it.src) continue;
+        var name =
+          it.artist && it.title ? it.artist + " · " + it.title : it.title || it.artist || "未命名";
+        tracks.push({ name: name, url: it.src, from: "library" });
       }
-      next();
+      if (tracks.length) {
+        index = 0;
+        setTitle();
+        D.note("music", { from: "library", tracks: tracks.length });
+      }
     }
 
     /* ---- 交互 ---- */
@@ -842,21 +823,47 @@
       if (files && files.length) addFiles(files);
     });
 
-    /* 均衡器视觉效果：播放时上下跳动 */
-    Ticker.add(function (dt, now) {
-      if (audio.paused) {
-        for (var i = 0; i < eqBars.length; i++) eqBars[i].style.height = "4px";
-        return;
+    /* 均衡器：静态小色块，不做任何跳动 / 发光（避免晃眼） */
+
+    /* 「想不想来点音乐」→ 随机放一首；歌库和卡片都空着就返回 false，让弹窗去说明情况 */
+    function playRandom() {
+      var lib = window.AUDIO_LIBRARY || [];
+      var pool = [];
+      for (var i = 0; i < lib.length; i++) {
+        if (lib[i] && lib[i].src) pool.push(lib[i]);
       }
-      for (var j = 0; j < eqBars.length; j++) {
-        var h = 4 + 12 * Math.abs(Math.sin(now * (2.4 + j * 0.35) + j * 1.7));
-        eqBars[j].style.height = h.toFixed(1) + "px";
+
+      if (pool.length) {
+        var pick = pool[Math.floor(Math.random() * pool.length)];
+        var name =
+          pick.artist && pick.title ? pick.artist + " · " + pick.title : pick.title || pick.artist || "未命名";
+        for (var j = 0; j < tracks.length; j++) {
+          if (tracks[j].url === pick.src) {
+            load(j, true);
+            return true;
+          }
+        }
+        tracks.push({ name: name, url: pick.src, from: "library" });
+        load(tracks.length - 1, true);
+        return true;
       }
-    });
+
+      // 歌库清单还空着：退一步，看看卡片上是不是已经拖进歌了
+      if (tracks.length) {
+        var at = Math.floor(Math.random() * tracks.length);
+        if (tracks.length > 1 && at === index) at = (at + 1) % tracks.length;
+        load(at, true);
+        return true;
+      }
+
+      return false;
+    }
+
+    musicApi.playRandom = playRandom;
 
     setTitle();
-    probeAudioFolder();
-    D.note("music", { tracks: 0, state: "idle" });
+    loadLibrary();
+    D.note("music", { tracks: tracks.length, state: "idle" });
     window.addEventListener("beforeunload", function () {
       for (var i = 0; i < objectUrls.length; i++) window.URL.revokeObjectURL(objectUrls[i]);
     });
@@ -881,8 +888,6 @@
         { t: " / ", c: "out" },
         { t: "QQ 2941923433", c: "key" },
       ],
-      [{ t: "$ uptime", c: "cmd" }],
-      [{ t: "building since 2026 — 和 AI 结对写代码，只重写过一次", c: "out" }],
     ];
 
     var cursor = document.createElement("span");
@@ -953,5 +958,6 @@
     initTerminal: initTerminal,
     initNav: initNav,
     focusCard: focusCard,
+    music: musicApi,
   };
 })();
