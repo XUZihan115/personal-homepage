@@ -1,12 +1,14 @@
 /* js/sun-moon.js —— 模块四：太阳 / 月亮
  *
- * 用的是真实的天体影像：
+ * 两颗星球的表面：
  *   月亮 = NASA LRO 月球反照率图（等距圆柱 2048×1024），
  *          凹凸由反照率亮度现场派生（亮的高地 = 高，暗的月海 = 低）。
- *   太阳 = NASA SDO/HMI 日面连续谱影像，先按视角反演掉临边昏暗，
- *          再由着色器用 mu 重新算一遍，这样自转时不会有亮斑跟着跑。
- * 外层加日冕光晕，太阳表面贴着「日珥」弧环并偶尔抛射粒子。
- * 贴图只走相对路径 textures/*.jpg；拿不到（比如 file:// 打开）时
+ *   太阳 = 现场程序化生成（makeSunMap）：球面 Voronoi 米粒组织 + 黑子，不读外部图片。
+ *          原先用的是 SDO 日面圆盘图，但单张只覆盖约 180°，只能镜像拼成 360°，
+ *          导致左右重复亮斑 + 中间竖缝，米粒还被反演过程抹平了（详见 makeSunMap 上的注释）。
+ * 着色器再按视角算一遍真实的临边昏暗 I(μ) = 1 - u(1-μ) - v(1-μ)²。
+ * 外层加一圈很弱的日冕光晕，太阳表面贴着「日珥」弧环并偶尔抛射粒子。
+ * 月亮贴图只走相对路径 textures/*.jpg；拿不到（比如 file:// 打开）时
  * 自动退回程序化生成的表面，页面依然是完整的。
  * 点击卡片在两者之间切换（淡出 → 淡入 + 一次很轻的闪光）。
  *
@@ -104,9 +106,17 @@
     "  }",
     "  vec3 V = normalize(cameraPosition - vWorldPos);",
     "  float mu = clamp(dot(normalize(vNormalW), V), 0.0, 1.0);",
-    // 临边昏暗：中心最亮，越靠边越暗，最外圈补一点偏红的色温
-    "  vec3 col = albedo * (0.30 + 0.70 * pow(mu, 0.65));",
-    "  col += vec3(1.0, 0.34, 0.06) * pow(1.0 - mu, 3.2) * 0.75;",
+    // 临边昏暗用可见光下的实测定律：I(μ) = 1 - u(1-μ) - v(1-μ)²，u=0.93、v=-0.23。
+    // 特征是日面中心一大片几乎平坦、最外圈才快速塌到约 30%。
+    // 原来那版 0.30 + 0.70 * pow(mu, 0.65) 中段偏亮，整颗球看着又平又假。
+    "  float c = 1.0 - mu;",
+    "  float ld = 1.0 - 0.93 * c + 0.23 * c * c;",
+    "  if (ld < 0.0) ld = 0.0;",
+    "  vec3 col = albedo * ld;",
+    // 边缘轻微偏红（色球层透出）：真实量级很小，加猛了就是一圈霓虹描边
+    "  float warm = clamp((c - 0.35) / 0.65, 0.0, 1.0);",
+    "  warm = warm * warm * 0.55;",
+    "  col = mix(col, col * vec3(1.02, 0.72, 0.44), warm);",
     "  gl_FragColor = vec4(col, uOpacity);",
     "}",
   ].join("\n");
@@ -316,6 +326,207 @@
     return { albedo: alb, height: hei };
   }
 
+  /* ============================================================
+     太阳贴图：CPU 预生成（球面 Voronoi 米粒组织 + 黑子）
+     ============================================================
+     早先这里贴的是一张 textures/sun-albedo.jpg，来自 NASA SDO 的日面圆盘图。
+     问题是单张圆盘图只覆盖约 180°，背面只能靠镜像拼出来 —— 结果就是
+     左右两个重复亮斑 + 中间一条竖直接缝，而且反演过程把米粒组织全抹平了。
+     贴到球上是一颗「橙色塑料球」，怎么调着色器都不像太阳。
+
+     改成程序化生成后：
+       · 全程在球面上算，经度方向天然无缝，两极也不会被挤压变形；
+       · 米粒组织用球面 Voronoi 的 intergranular lane 建模（对流细胞），
+         而不是随便撒噪点；
+       · 黑子有本影 + 半影两层，成对成群压在中低纬度。
+
+     一个必须说清的取舍：真实米粒只有太阳直径的 1/1000，照真实比例画
+     在这张 512 宽的贴图上不到 1px。所以米粒是艺术化放大的，但只放大成
+     「高频、低对比的细密沙粒感」——放大成大块细胞就会变成龟裂/橘子皮，
+     反而更假。黑子同理（真实 0.8~4°，这里放大到 2~5° 才看得见）。
+     ============================================================ */
+  function makeSunMap() {
+    var W = 512;
+    var H = 256;
+    var GX = 128; // 桶网格：查询时只看 3x3，避免每像素遍历全部细胞
+    var GY = 64;
+
+    // 固定种子：每次刷新出来的日面都一样（Math.random 会每帧变一张脸）
+    var seed = 20260921;
+    function rnd() {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return seed / 4294967296;
+    }
+
+    // uv -> 球面单位向量；v=0 是北极
+    function dirFromUV(u, v) {
+      var sinLat = 1 - 2 * v;
+      var cosLat = Math.sqrt(Math.max(0, 1 - sinLat * sinLat));
+      var lon = u * Math.PI * 2;
+      return [cosLat * Math.cos(lon), sinLat, cosLat * Math.sin(lon)];
+    }
+
+    // 一层细胞场：返回「到细胞间暗缝的距离」，细胞内部大、缝隙上为 0
+    function cellField(count, laneWidthDeg) {
+      var dirs = new Float32Array(count * 3);
+      var buckets = [];
+      for (var i = 0; i < count; i++) {
+        var u = rnd();
+        var v = rnd();
+        var d = dirFromUV(u, v);
+        dirs[i * 3] = d[0];
+        dirs[i * 3 + 1] = d[1];
+        dirs[i * 3 + 2] = d[2];
+        var bi =
+          Math.min(GY - 1, Math.floor(v * GY)) * GX +
+          Math.min(GX - 1, Math.floor(u * GX));
+        if (!buckets[bi]) buckets[bi] = [];
+        buckets[bi].push(i);
+      }
+
+      var laneRad = (laneWidthDeg * Math.PI) / 180;
+      var out = new Float32Array(W * H);
+
+      for (var y = 0; y < H; y++) {
+        var uy = (y + 0.5) / H;
+        var by0 = Math.min(GY - 1, Math.floor(uy * GY));
+        for (var x = 0; x < W; x++) {
+          var ux = (x + 0.5) / W;
+          var p = dirFromUV(ux, uy);
+          var px = p[0];
+          var py = p[1];
+          var pz = p[2];
+          var bx0 = Math.min(GX - 1, Math.floor(ux * GX));
+
+          var best = -2;
+          var second = -2;
+          for (var dy = -1; dy <= 1; dy++) {
+            var byy = by0 + dy;
+            if (byy < 0) byy = 0;
+            else if (byy > GY - 1) byy = GY - 1;
+            for (var dx = -1; dx <= 1; dx++) {
+              // 经度方向绕回来，接缝处的细胞才连得上
+              var list = buckets[byy * GX + ((bx0 + dx + GX) % GX)];
+              if (!list) continue;
+              for (var k = 0; k < list.length; k++) {
+                var j = list[k];
+                var dot =
+                  dirs[j * 3] * px + dirs[j * 3 + 1] * py + dirs[j * 3 + 2] * pz;
+                if (dot > best) {
+                  second = best;
+                  best = dot;
+                } else if (dot > second) {
+                  second = dot;
+                }
+              }
+            }
+          }
+          if (second < -1.5) second = best; // 桶里只有一个细胞时的兜底
+
+          var d1 = Math.sqrt(Math.max(0, 2 - 2 * best));
+          var d2 = Math.sqrt(Math.max(0, 2 - 2 * second));
+          var t = (d2 - d1) / laneRad;
+          out[y * W + x] = t > 1 ? 1 : t;
+        }
+      }
+      return out;
+    }
+
+    var fLow = cellField(150, 5.0);
+    var fMeso = cellField(700, 2.4);
+    var fGran = cellField(5200, 1.25);
+    var fFine = cellField(19000, 0.62);
+
+    /* 黑子：[经度u, 纬度v, 本影角半径(度), 半影角半径(度)]
+       放大过的比例，成对成群。 */
+    var spots = [
+      [0.128, 0.330, 4.2, 10.5],
+      [0.146, 0.352, 2.2, 6.0],
+      [0.112, 0.356, 1.6, 4.3],
+      [0.618, 0.585, 4.8, 11.5],
+      [0.637, 0.606, 2.0, 5.4],
+      [0.845, 0.305, 3.2, 8.0],
+      [0.352, 0.655, 2.0, 5.2],
+    ];
+    var spotList = [];
+    for (var s = 0; s < spots.length; s++) {
+      spotList.push({
+        d: dirFromUV(spots[s][0], spots[s][1]),
+        umbra: (spots[s][2] * Math.PI) / 180,
+        penumbra: (spots[s][3] * Math.PI) / 180,
+      });
+    }
+
+    var c = document.createElement("canvas");
+    c.width = W;
+    c.height = H;
+    var g = c.getContext("2d");
+    var img = g.createImageData(W, H);
+    var data = img.data;
+
+    // 日面配色：细胞间暗缝 -> 米粒 -> 最亮的米粒中心
+    var laneDark = [214, 132, 44];
+    var midTone = [250, 198, 116];
+    var brightTop = [255, 246, 214];
+
+    for (var yy = 0; yy < H; yy++) {
+      for (var xx = 0; xx < W; xx++) {
+        var idx = yy * W + xx;
+
+        var gran =
+          fLow[idx] * 0.1 +
+          fMeso[idx] * 0.2 +
+          fGran[idx] * 0.34 +
+          fFine[idx] * 0.36;
+        gran = gran * 0.82 + fLow[idx] * 0.18; // 大尺度亮度起伏
+        gran = (gran - 0.06) / 0.86;
+        if (gran < 0) gran = 0;
+        else if (gran > 1) gran = 1;
+
+        var r = laneDark[0] + (midTone[0] - laneDark[0]) * gran;
+        var gg = laneDark[1] + (midTone[1] - laneDark[1]) * gran;
+        var b = laneDark[2] + (midTone[2] - laneDark[2]) * gran;
+
+        var hot = (gran - 0.7) / 0.3;
+        if (hot > 0) {
+          hot = hot * hot * 0.55;
+          r += (brightTop[0] - r) * hot;
+          gg += (brightTop[1] - gg) * hot;
+          b += (brightTop[2] - b) * hot;
+        }
+
+        var p = dirFromUV((xx + 0.5) / W, (yy + 0.5) / H);
+        for (var si = 0; si < spotList.length; si++) {
+          var sp = spotList[si];
+          var dot = sp.d[0] * p[0] + sp.d[1] * p[1] + sp.d[2] * p[2];
+          if (dot <= 0.6) continue; // 离得远的直接跳过
+          var ang = Math.acos(Math.min(1, dot));
+          if (ang < sp.penumbra) {
+            var depth;
+            if (ang < sp.umbra) {
+              depth = 0.88; // 本影：很暗但不是纯黑，真实本影仍有约 15% 日面亮度
+            } else {
+              // 半影：从本影边缘平滑回到正常日面，k^0.75 让边缘不生硬
+              depth =
+                0.46 * Math.pow(1 - (ang - sp.umbra) / (sp.penumbra - sp.umbra), 0.75);
+            }
+            r += (78 - r) * depth;
+            gg += (34 - gg) * depth;
+            b += (10 - b) * depth;
+          }
+        }
+
+        var o = idx * 4;
+        data[o] = Math.min(255, Math.max(0, r));
+        data[o + 1] = Math.min(255, Math.max(0, gg));
+        data[o + 2] = Math.min(255, Math.max(0, b));
+        data[o + 3] = 255;
+      }
+    }
+    g.putImageData(img, 0, 0);
+    return c;
+  }
+
   /* 日冕 / 光晕贴图 */
   function glowTexture(stops) {
     var s = 256;
@@ -462,7 +673,7 @@
     var fallbackEl = document.getElementById("celestialFallback");
 
     var STATE = {
-      sun: { label: "太阳 · 自转中", meta: "NASA SDO/HMI 日面影像 · 自转一周约 25 天", toggle: "点击切换" },
+      sun: { label: "太阳 · 自转中", meta: "程序化日面（米粒组织 + 黑子）· 自转一周约 25 天", toggle: "点击切换" },
       moon: { label: "月亮 · 同步自转", meta: "NASA LRO 月面反照率图 · 平均距地 384,400 km", toggle: "点击切回" },
     };
 
@@ -520,48 +731,62 @@
     moonGroup.rotation.y = -Math.PI / 2;
 
     /* ---- 太阳 ---- */
+    // 日面贴图现场生成：不用外部图片，file:// 直开也不会被跨域拦掉
+    var sunTexCanvas = null;
+    try {
+      sunTexCanvas = makeSunMap();
+    } catch (e) {
+      sunTexCanvas = null; // 生成失败就退回着色器里的程序化表面
+    }
+
     var sunMat = new THREE.ShaderMaterial({
       uniforms: {
         uTime: { value: 0 },
         uOpacity: { value: 1 },
-        uAlbedo: { value: new THREE.CanvasTexture(onePixel("#f3b95c")) },
-        uUseTex: { value: 0 },
+        uAlbedo: {
+          value: new THREE.CanvasTexture(
+            sunTexCanvas || onePixel("#f3b95c")
+          ),
+        },
+        uUseTex: { value: sunTexCanvas ? 1 : 0 },
       },
       vertexShader: SUN_VERT,
       fragmentShader: SUN_FRAG,
       transparent: true,
     });
+    if (sunTexCanvas) {
+      // 经度方向要能绕回来，不然贴图两端会接不上
+      sunMat.uniforms.uAlbedo.value.wrapS = THREE.RepeatWrapping;
+      D.note("celestial", { sunTex: "procedural" });
+    }
     var sunMesh = new THREE.Mesh(new THREE.SphereGeometry(R, 64, 48), sunMat);
     sunGroup.add(sunMesh);
 
-    // 真实日面（NASA SDO/HMI）：加载成功就切到贴图路径，失败则继续用程序化表面
-    function applySunTex(tex) {
-      sunMat.uniforms.uAlbedo.value = tex;
-      sunMat.uniforms.uUseTex.value = 1;
-      D.note("celestial", { sunTex: "textures/sun-albedo.jpg" });
-    }
-    loadTexture("textures/sun-albedo.jpg", applySunTex, function () {
-      loadInline("sun", applySunTex); // file:// 兜底
-    });
-
+    /* 日冕光晕 —— 「发光灯泡感」的另一个来源。
+       原来这张贴图中心是 alpha 0.95 的白光，正压在日面正中央，
+       刚做出来的米粒组织和临边昏暗全被它冲平了。
+       真实太阳在太空里是一个边缘锐利的亮盘，日冕肉眼几乎看不见，
+       所以现在日面内部一律透明，只在球体外面留一圈很弱的光。
+       scale 2.7 → 光晕半径 1.35R，球边缘落在归一化半径 1/1.35 ≈ 0.74 处，
+       因此 0.62 以前都保持全透明。 */
     var sunGlow = new THREE.Sprite(
       new THREE.SpriteMaterial({
         map: new THREE.CanvasTexture(
           glowTexture([
-            [0, "rgba(255,244,205,0.95)"],
-            [0.16, "rgba(255,196,96,0.55)"],
-            [0.40, "rgba(255,124,32,0.20)"],
-            [0.72, "rgba(255,72,10,0.05)"],
+            [0, "rgba(255,200,120,0)"],
+            [0.62, "rgba(255,196,110,0)"],
+            [0.74, "rgba(255,170,84,0.30)"],
+            [0.86, "rgba(255,120,36,0.10)"],
             [1, "rgba(255,60,0,0)"],
           ])
         ),
         blending: THREE.AdditiveBlending,
         transparent: true,
         depthWrite: false,
-        opacity: 0.95,
+        opacity: 0.75,
       })
     );
-    sunGlow.scale.set(3.9, 3.9, 1);
+    sunGlow.scale.set(2.7, 2.7, 1);
     sunGroup.add(sunGlow);
 
     /* ---- 月亮 ---- */
@@ -975,9 +1200,14 @@
       body: "sun",
       bumps: moonMat.uniforms.uBump.value,
       moonMap: "1024x512",
-      textures: "textures/ (NASA LRO / SDO)",
+      textures: "textures/ (NASA LRO) + 程序化日面",
     });
   }
 
-  window.SunMoon = { init: init, makeMoonMaps: makeMoonMaps, heightFromImage: heightFromImage };
+  window.SunMoon = {
+    init: init,
+    makeMoonMaps: makeMoonMaps,
+    heightFromImage: heightFromImage,
+    makeSunMap: makeSunMap,
+  };
 })();
