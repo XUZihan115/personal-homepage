@@ -183,6 +183,14 @@ body {
   background: rgba(255, 255, 255, 0.06);
 }
 
+/* 「换设备」是回选择页的出口，不是内容页 —— 做得比别的导航项低调一点，
+   免得它看着像第五个栏目。颜色走 var(--muted)，日 / 夜两套都读得清。 */
+.nav-links a.nav-switch {
+  color: var(--muted);
+  padding-left: 7px;
+  padding-right: 7px;
+}
+
 .nav-reset {
   width: 30px;
   height: 30px;
@@ -250,29 +258,55 @@ body {
   top: 57px;
 }
 
-/* ---------- 背景色调：跟着太阳 / 月亮走，和天上的东西相衬 ---------- */
+/* ---------- 主题：整页跟着太阳 / 月亮走 ----------
+   月亮 = 夜：整套深色，跟原来一模一样（:root 里那套默认值就是夜）。
+   太阳 = 昼：蓝绿——淡青底、白卡片、青绿 / 天蓝的点缀，干净、青春、有阳光味。
+
+   做法是「先换一组变量、再把写死的死角一条条点名换掉」：
+   卡片、文字、边框、阴影、数码管、指针涟漪这些本来就走 var(--…)，
+   所以换一组变量它们就跟着走了；当年写死了深色的地方（网格、暗角、导航胶囊、
+   终端卡、标签、引导条……）在下面用 body.bg-sun 单独补。
+   这些规则只加、不改任何一条旧规则 —— 所以夜色一个像素都没动。 */
 body {
-  transition: background-color 0.9s ease;
+  transition: background-color 0.9s ease, color 0.6s ease;
 }
 
+/* 昼 · 蓝绿：淡青底 + 白卡片 + 青绿 / 天蓝点缀 */
 body.bg-sun {
-  background-color: #0d0906;
+  --bg: #e2f6f4;
+  --card: #ffffff;
+  --card-top: #fbfefe;
+  --line: rgba(13, 148, 136, 0.16);
+  --line-strong: rgba(13, 148, 136, 0.32);
+  --text: #0d3b3a;
+  --muted: #4b7d7a;
+  --dim: #86aaa8;
+  --amber: #0d9488;
+  --amber-soft: rgba(13, 148, 136, 0.12);
+  --amber-line: rgba(13, 148, 136, 0.38);
+  --accent: #0891b2;
+  --accent-2: #14b8a6;
+  --pink: #22d3ee;
+  --shadow: 0 16px 36px rgba(13, 90, 88, 0.13);
+  background-color: #e2f6f4;
 }
 
+/* 夜 */
 body.bg-moon {
-  background-color: #06080f;
+  background-color: #070b1a;
 }
 
 .backdrop .glow {
   transition: background 0.9s ease;
 }
 
+/* 昼：青绿 → 天蓝的对角光，像早晨从水面反上来的那层亮 */
 body.bg-sun .backdrop .glow-a {
-  background: radial-gradient(circle, rgba(255, 152, 62, 0.34), transparent 65%);
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.4), transparent 65%);
 }
 
 body.bg-sun .backdrop .glow-b {
-  background: radial-gradient(circle, rgba(232, 96, 40, 0.2), transparent 65%);
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.32), transparent 65%);
 }
 
 body.bg-moon .backdrop .glow-a {
@@ -281,6 +315,240 @@ body.bg-moon .backdrop .glow-a {
 
 body.bg-moon .backdrop .glow-b {
   background: radial-gradient(circle, rgba(140, 92, 205, 0.24), transparent 65%);
+}
+
+/* ---------- 昼：把写死了深色的地方一条条换过来 ----------
+   每条都带 body.bg-sun，所以只在太阳那一态生效；
+   夜态下它们匹配不上，旧规则照旧赢。 */
+
+/* 背景：网格线要转成深色才看得见，暗角改成青色的一圈晕 */
+body.bg-sun .backdrop .grid {
+  background-image:
+    linear-gradient(to right, rgba(13, 148, 136, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(13, 148, 136, 0.07) 1px, transparent 1px);
+}
+
+body.bg-sun .backdrop .vignette {
+  background: radial-gradient(ellipse at 50% 45%, transparent 52%, rgba(13, 120, 110, 0.12) 100%);
+}
+
+/* 顶部导航：深色玻璃 → 白色玻璃 */
+body.bg-sun .nav-pill {
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 10px 30px rgba(13, 90, 88, 0.13);
+}
+
+body.bg-sun .nav-logo {
+  background: linear-gradient(140deg, #2dd4bf, #0ea5e9);
+  color: #04302e;
+}
+
+body.bg-sun .nav-links a:hover {
+  background: rgba(13, 148, 136, 0.08);
+}
+
+body.bg-sun .corner-reset {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 22px rgba(13, 90, 88, 0.13);
+}
+
+body.bg-sun .corner-reset:hover {
+  background: #ffffff;
+}
+
+/* 卡片本身走 var(--card)，这里只补两处写死的阴影 */
+body.bg-sun .card::after {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+body.bg-sun .card.dragging {
+  box-shadow: 0 30px 60px rgba(13, 90, 88, 0.24);
+}
+
+/* ① 自我介绍 */
+body.bg-sun .hello {
+  color: #0d3b3a;
+}
+
+body.bg-sun .name-fallback {
+  background: linear-gradient(100deg, #0ea5e9, #14b8a6 45%, #22d3ee);
+}
+
+body.bg-sun .intro-text strong {
+  color: #0891b2;
+}
+
+body.bg-sun .intro-text.dim {
+  color: #86aaa8;
+}
+
+body.bg-sun .icon-btn {
+  background: rgba(13, 148, 136, 0.06);
+}
+
+body.bg-sun .icon-btn:hover {
+  color: #0891b2;
+  background: rgba(8, 145, 178, 0.12);
+  border-color: rgba(8, 145, 178, 0.4);
+}
+
+body.bg-sun .pill-tag {
+  color: #0f766e;
+  border-color: rgba(20, 184, 166, 0.42);
+  background: rgba(20, 184, 166, 0.1);
+}
+
+/* ② 数码管：灭着的段和亮着的辉光都跟着 --amber 走。
+   这里要挑准对象 —— i.on 是同一个元素上加的类，用 :not() 把亮段让开，
+   免得把点亮的段又刷成灭着的颜色。 */
+body.bg-sun .seg-digit i:not(.on) {
+  background: rgba(13, 148, 136, 0.14);
+}
+
+body.bg-sun .seg-digit i.on {
+  box-shadow: 0 0 7px rgba(13, 148, 136, 0.5);
+}
+
+body.bg-sun .seg-colon:not(.off) i {
+  box-shadow: 0 0 7px rgba(13, 148, 136, 0.55);
+}
+
+/* ③ 太阳 / 月亮那块画布：它是一扇看天的窗，天本来就是黑的，留着不动，
+   只给它描一道浅边，好从白卡上分辨出来 */
+body.bg-sun .canvas-wrap {
+  border-color: rgba(13, 148, 136, 0.12);
+}
+
+/* ④ 技能标签 */
+body.bg-sun .tag {
+  color: #3f5f5d;
+  background: rgba(13, 148, 136, 0.05);
+}
+
+body.bg-sun .tag:hover {
+  color: #0f766e;
+  border-color: rgba(8, 145, 178, 0.4);
+  background: rgba(8, 145, 178, 0.1);
+}
+
+body.bg-sun .tag.hot {
+  color: #0f766e;
+  border-color: rgba(8, 145, 178, 0.34);
+  background: rgba(8, 145, 178, 0.1);
+}
+
+/* ⑤ 经历 */
+body.bg-sun .timeline li::before {
+  background: #b9dbd8;
+  border-color: rgba(13, 148, 136, 0.2);
+}
+
+body.bg-sun .timeline li:first-child::before {
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(13, 148, 136, 0.55);
+}
+
+body.bg-sun .tl-title {
+  color: #0d3b3a;
+}
+
+/* ⑥ 终端卡片 */
+body.bg-sun .card-term {
+  background: linear-gradient(170deg, #ffffff, #f2fbfa);
+}
+
+body.bg-sun .term-bar {
+  background: rgba(13, 148, 136, 0.04);
+}
+
+body.bg-sun .term-body {
+  color: #3f5f5d;
+}
+
+body.bg-sun .term-body .out {
+  color: #86aaa8;
+}
+
+body.bg-sun .term-body .key {
+  color: #0891b2;
+}
+
+body.bg-sun .term-body .cursor {
+  background: #3f5f5d;
+}
+
+/* ⑦ 引导条：虚线转青绿 */
+body.bg-sun .ask-guide {
+  border-color: rgba(13, 148, 136, 0.42);
+  background: linear-gradient(160deg, rgba(13, 148, 136, 0.1), rgba(56, 189, 248, 0.07));
+}
+
+body.bg-sun .ask-guide-ic {
+  background: rgba(13, 148, 136, 0.16);
+}
+
+body.bg-sun .ask-guide-txt {
+  color: #234f4d;
+}
+
+body.bg-sun .ask-guide-txt .dim {
+  color: #86aaa8;
+}
+
+body.bg-sun .ask-guide-btn {
+  color: #04302e;
+}
+
+/* 底部提示 */
+body.bg-sun .hintbar {
+  color: #86aaa8;
+}
+
+body.bg-sun .hintbar .sep {
+  color: #c5dedc;
+}
+
+/* 独立页面：按钮、输入框、留言条 */
+body.bg-sun .page-btn {
+  background: linear-gradient(140deg, rgba(8, 145, 178, 0.14), rgba(20, 184, 166, 0.14));
+  border-color: rgba(8, 145, 178, 0.38);
+  color: #0b4f57;
+}
+
+body.bg-sun .page-btn.ghost {
+  background: rgba(13, 148, 136, 0.05);
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+body.bg-sun .page-btn.ghost:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+body.bg-sun .gb-form input,
+body.bg-sun .gb-form textarea,
+body.bg-sun .proj-tool input {
+  background: rgba(13, 148, 136, 0.035);
+}
+
+body.bg-sun .gb-item {
+  background: rgba(13, 148, 136, 0.03);
+}
+
+/* 指针涟漪：昼青绿、夜冷蓝（夜的那两条在文件末尾，这里只补昼的） */
+body.bg-sun .cursor-fx .halo {
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.16), rgba(45, 212, 191, 0.07) 40%, rgba(45, 212, 191, 0) 70%);
+}
+
+body.bg-sun .cursor-fx .ring {
+  border-color: rgba(13, 148, 136, 0.7);
+  box-shadow: 0 0 14px rgba(13, 148, 136, 0.28), inset 0 0 10px rgba(13, 148, 136, 0.2);
+}
+
+/* ③ 那颗跳动的小圆点：辉光跟 --amber 对齐 */
+body.bg-sun .live-dot {
+  box-shadow: 0 0 8px rgba(13, 148, 136, 0.9);
 }
 
 /* ---------- 「联想一下」的两幅画（平时完全透明） ---------- */
