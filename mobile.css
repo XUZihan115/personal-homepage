@@ -1,0 +1,150 @@
+/* ============================================================
+   mobile.css —— 手机版的收尾调整
+   ============================================================
+
+   用法：只有 mobile.html 引用它（那个文件的 <html> 上带 class="mobile"）。
+   所有规则都挂在 html.mobile 下面，于是：
+     · 桌面版 desktop.html 完全不读这个文件，一像素都不受影响；
+     · 手机版在电脑上被拉宽预览时，也照样是手机版式 —— 版式不靠屏幕宽度判断，
+       靠的是 <html> 上那个 .mobile 类。
+
+   分工：主力排版仍然在 style.css 里（它 @media (max-width:900px) 那段已经把卡片
+   放回文档流了），这个文件只补三件它没管干净的事：
+     ① 卡片在手机上滚不动（下面第 1 节，最关键的一条）
+     ② 「归位」/ 拖拽那套在手机上没意义，得收掉
+     ③ 引导条在矮屏幕上一直压着内容，得从浮动改成正常排列
+   另外让手机版在宽屏下预览时也不塌 —— 见第 2 节。
+   ============================================================ */
+
+/* ============================================================
+   1. 把滚动还给手指（手机版能不能用的前提）
+   ------------------------------------------------------------
+   style.css 里 .card 挂了 touch-action: none，那是给鼠标拖拽用的，意思是
+   「落在这一块上的触摸手势，浏览器你别管，交给 JS」。
+
+   桌面版没事（卡片小、周围有空地）。但手机上卡片是单列、一条接一条铺满整屏，
+   手指按在哪张卡片上往下滑，滚动都被浏览器让掉了 —— 页面根本不动。
+   这一条就是把滚动权收回来。原来那条写在单个 .card 上，这里带上 html.mobile
+   前缀，特异性更高，能稳稳压住它。
+   ============================================================ */
+html.mobile .card,
+html.mobile .card.grab {
+  touch-action: auto;
+  cursor: default; /* 手机上拖不动，别摆出「可抓」的姿态 */
+}
+
+/* 拖拽时才加的那个阴影，手机上不该出现 */
+html.mobile .card.dragging {
+  border-color: var(--line);
+  box-shadow: var(--shadow);
+}
+
+/* ============================================================
+   2. 单列纵向排版
+   ============================================================ */
+html.mobile .stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 14px 8px;
+  min-height: 0;
+}
+
+html.mobile .card {
+  /* !important 是为了压掉 CSS 里的绝对定位，以及 JS 拖拽留下的行内 left / top */
+  position: static !important;
+  width: 100% !important;
+  max-width: 620px; /* 在电脑上预览手机版时，别把卡片拉成一条长带子 */
+  left: auto !important;
+  top: auto !important;
+  transform: none;
+}
+
+/* 阅读顺序：先说人是谁 → 再看时间和天上的东西 → 最后技能 / 经历 / 联系方式 */
+html.mobile .card-intro {
+  order: 1;
+}
+html.mobile .card-clock {
+  order: 2;
+}
+html.mobile .card-celestial {
+  order: 3;
+}
+html.mobile .card-skills {
+  order: 4;
+}
+html.mobile .card-exp {
+  order: 5;
+}
+html.mobile .card-term {
+  order: 6;
+}
+
+/* ============================================================
+   3. 收掉「归位」和拖拽那套
+   ============================================================ */
+/* 卡片在手机版里根本不移动，归位按钮没有意义，留着还占地方 */
+html.mobile #resetLayout {
+  display: none;
+}
+
+/* 「归位」让出第一格之后，「联想一下」补到左上角去 */
+html.mobile .corner-muse {
+  top: max(17px, env(safe-area-inset-top, 0px));
+}
+
+/* ============================================================
+   4. 顶部导航：手指按得准一点，五栏也得排得下
+   ============================================================ */
+html.mobile .topbar {
+  flex-wrap: wrap;
+  padding-top: max(18px, env(safe-area-inset-top, 0px));
+}
+
+html.mobile .nav-pill {
+  max-width: 100%;
+}
+
+html.mobile .nav-links {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+html.mobile .nav-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 9px;
+  font-size: 12px;
+}
+
+/* 「换设备」是出口不是内容页，让它再收一点 */
+html.mobile .nav-links a.nav-switch {
+  padding: 7px 7px;
+}
+
+/* ============================================================
+   5. 引导条：从「浮在屏幕底部」改成正常排进单列末尾
+   ------------------------------------------------------------
+   桌面版里它是 fixed 的，靠 .hintbar 的 78px 下边距给它让位。
+   手机屏幕本来就矮，一个常驻浮条会一直压着内容、还挡住滚动的视线，
+   所以在手机版直接把它放回文档流，跟在最后一张卡片后面。
+   ============================================================ */
+html.mobile .ask-guide {
+  position: static;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  order: 7;
+  width: 100%;
+  max-width: 620px;
+  margin: 0;
+}
+
+/* 引导条不再浮着，底部那行提示就不用给它让位了 */
+html.mobile .hintbar {
+  padding: 8px 16px calc(22px + env(safe-area-inset-bottom, 0px));
+  gap: 6px;
+  text-align: center;
+}

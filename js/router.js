@@ -1,12 +1,12 @@
 /* router.js —— 极简 hash 路由
  *
- * 一个 index.html 里同时装着「首页卡片」和四个独立页面：
+ * 一个页面文件里同时装着「首页卡片」和四个独立页面（desktop.html / mobile.html 用的是同一套结构）：
  *   #/ 或空 hash        → 首页（.stage 卡片 + 底部提示）
  *   #/detail #/guestbook #/projects #/contact
  *                       → 对应的 .page
  *
  * 切换只改 hidden 和 class，不刷新页面；浏览器的前进 / 后退键也能用。
- * 每个页面还能直接分享链接（比如 .../index.html#/projects）。
+ * 每个页面还能直接分享链接（比如 .../desktop.html#/projects）。
  */
 (function () {
   "use strict";

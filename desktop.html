@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="徐子涵的个人主页 —— 可拖拽模块 · 汉字笔顺 · 太阳与月亮" />
+    <title>徐子涵 · 个人主页</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="bg-sun">
+    <!-- ===== 背景：淡网格 + 光晕（色调跟着太阳 / 月亮走） ===== -->
+    <div class="backdrop" aria-hidden="true">
+      <div class="grid"></div>
+      <div class="glow glow-a"></div>
+      <div class="glow glow-b"></div>
+      <div class="vignette"></div>
+    </div>
+
+    <!-- ===== 光标涟漪：鼠标划过时，在背景上按光标位置起一圈很淡的波纹 =====
+         位置讲究：放在背景之后、卡片和画作之前，所以波纹浮在背景上、又压不到内容；
+         进画作模式后会被不透明的画盖住，看画时完全不受打扰。
+         脚本没跑起来时它就是个空的透明层，什么都看不见。 ===== -->
+    <div class="cursor-fx" id="cursorFx" aria-hidden="true"></div>
+
+    <!-- ===== 「联想一下」的画作背景：平时完全透明，点了按钮才淡入 =====
+         太阳 / 月亮各有一组公有领域画作（只收横版：竖版铺满 16:9 屏幕时会被放大到只剩局部），
+         每次进画作模式随机取一幅，右下角标出作品名和作者。
+         这里的 background-image 只是「脚本没跑起来」时的兜底，正常运行由 js/mood.js 现场换。
+         画作出处见 CREDITS.md ===== -->
+    <div class="painting-layer" aria-hidden="true">
+      <div class="painting painting-sun"></div>
+      <div class="painting painting-moon"></div>
+      <div class="painting-veil"></div>
+    </div>
+
+    <!-- 画作署名：跟画一起淡入，「联想一下」每次随机换一幅 -->
+    <figure class="painting-credit" id="paintingCredit">
+      <figcaption class="art-credit">
+        <span class="art-title" id="artTitle"></span>
+        <span class="art-artist" id="artArtist"></span>
+      </figcaption>
+    </figure>
+
+    <!-- ===== 左上角：卡片归位（每次刷新页面也都从这里的位置开始） ===== -->
+    <button class="nav-reset corner-reset" id="resetLayout" type="button" title="所有卡片回到初始位置" aria-label="所有卡片回到初始位置">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9" /><path d="M20 4v5h-5" /></svg>
+      <span class="corner-reset-text">归位</span>
+    </button>
+
+    <!-- ===== 左上角第二栏：联想一下（把主页收起来，换上天上的东西相衬的那幅画） ===== -->
+    <button class="nav-reset corner-reset corner-muse" id="museBtn" type="button" title="收起主页，换成一幅画" aria-label="收起主页，换成一幅画" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2.2" /><circle cx="8.6" cy="9.6" r="1.5" /><path d="M3.6 16.8l4.6-4.6 3.6 3.6 2.4-2.4 6 6" /></svg>
+      <span class="corner-reset-text">联想一下</span>
+    </button>
+
+    <!-- ===== 顶部导航：点一下进入对应页面（hash 路由，#/ 是首页卡片） ===== -->
+    <header class="topbar">
+      <div class="nav-pill">
+        <a class="nav-logo" href="#/" data-route="home" aria-label="回到首页">徐</a>
+        <nav class="nav-links" aria-label="页面导航">
+          <a href="#/detail" data-route="detail">详情</a>
+          <a href="#/guestbook" data-route="guestbook">留言</a>
+          <a href="#/projects" data-route="projects">项目</a>
+          <a href="#/contact" data-route="contact">联系</a>
+          <a class="nav-switch" href="index.html?switch=1" title="重新选择用手机还是电脑打开">换设备</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===== 舞台：卡片可自由拖动 ===== -->
+    <main class="stage" id="stage">
+      <!-- ① 自我介绍（模块一：名字按笔顺书写，写完清空重写，颜色渐变） -->
+      <section class="card card-intro module" id="intro" data-card="intro" data-nav="intro">
+        <p class="hello">Hi, I&rsquo;m</p>
+        <div class="name-row" id="nameRow" aria-label="徐子涵">
+          <span class="name-fallback">徐子涵</span>
+          <span class="caret" aria-hidden="true"></span>
+        </div>
+        <p class="intro-text">
+          你好，我是<strong>徐子涵</strong>，天津大学香港理工大学深圳未来技术学院
+          <strong>智能医学工程</strong>专业的大一学生。我喜欢把想法尽快变成能真正跑起来的东西——
+          这个主页就是我用 Vibe Coding 的方式，和 AI 结对一点点搭出来的。
+        </p>
+        <p class="intro-text dim">
+          现在我在学 Web 开发与 AI 辅助开发的工程化实践：先写清需求，再让 AI 生成，
+          然后自己读代码、验证、反复迭代。上面这三个字，就是这么写出来的。
+        </p>
+        <div class="icon-row">
+          <a class="icon-btn" href="mailto:xzh_080115@tju.edu.cn" title="邮箱：xzh_080115@tju.edu.cn" aria-label="发送邮件">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M4 7.5l8 5.5 8-5.5" /></svg>
+          </a>
+          <a class="icon-btn" href="https://wpa.qq.com/msgrd?v=3&amp;uin=2941923433&amp;site=qq&amp;menu=yes" target="_blank" rel="noopener" title="QQ：2941923433" aria-label="QQ 联系">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8.5 8.5 0 0 1-12.3 7.6L4 21l1.5-4A8.5 8.5 0 1 1 21 12z" /></svg>
+          </a>
+          <button class="icon-btn" type="button" data-focus="experience" title="看我的经历" aria-label="看我的经历">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg>
+          </button>
+          <a class="pill-tag pill-link" href="#/detail" title="看这个主页的详情" aria-label="看详情">
+            详情
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg>
+          </a>
+        </div>
+      </section>
+
+      <!-- ② 当前时间（模块二：七段数码管时钟） -->
+      <section class="card card-clock module" id="clock" data-card="clock">
+        <div class="card-label">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span>现在时间</span>
+          <span class="label-right">UTC+8</span>
+        </div>
+        <div class="seg-clock" id="segClock" role="timer" aria-live="off"></div>
+        <div class="clock-meta">
+          <span id="clockDate">—</span>
+          <span id="clockGreet" class="dim">—</span>
+        </div>
+      </section>
+
+      <!-- ③ 太阳 / 月亮（模块三：点击切换，太阳自转 + 日珥，月亮带环形山） -->
+      <section class="card card-celestial module is-sun" id="celestial" data-card="celestial">
+        <div class="card-label">
+          <span id="celestialLabel">太阳 · 自转中</span>
+          <span class="label-right dim" id="celestialToggle">点击切换</span>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="celestialCanvas" width="320" height="230"></canvas>
+          <div class="celestial-fallback" id="celestialFallback" hidden></div>
+        </div>
+        <div class="celestial-meta">
+          <span id="celestialMeta">日面约 5,500 °C · 自转一周约 25 天</span>
+        </div>
+      </section>
+
+      <!-- ④ 技能（第一版内容：标签胶囊） -->
+      <section class="card card-skills module" id="skills" data-card="skills" data-nav="skills">
+        <div class="card-label"><span>技能与工具</span><span class="label-right dim">2026</span></div>
+        <div class="tag-cloud">
+          <span class="tag">HTML</span>
+          <span class="tag hot">CSS</span>
+          <span class="tag hot">JavaScript</span>
+          <span class="tag">Git 版本控制</span>
+          <span class="tag hot">AI 辅助开发</span>
+          <span class="tag">Prompt 迭代</span>
+          <span class="tag">数据分析基础</span>
+          <span class="tag">智能医学工程</span>
+          <span class="tag">原型验证</span>
+        </div>
+      </section>
+
+      <!-- ⑤ 经历（第一版内容） -->
+      <section class="card card-exp module" id="experience" data-card="experience" data-nav="experience">
+        <div class="card-label"><span>教育与实践</span><span class="label-right dim">2026 —</span></div>
+        <ul class="timeline">
+          <li>
+            <span class="tl-title">天津大学香港理工大学深圳未来技术学院</span>
+            <span class="tl-meta">智能医学工程 · 大一在读</span>
+            <span class="tl-desc">修读《项目导向 CST 与 AI 基础》，做 AI 原生开发实践。</span>
+          </li>
+          <li>
+            <span class="tl-title">个人主页项目</span>
+            <span class="tl-meta">Vibe Coding · 2026</span>
+            <span class="tl-desc">纯 HTML / CSS / JS 从零迭代，第一版做内容与排版，第二版做成可拖拽的卡片式主页。</span>
+          </li>
+        </ul>
+      </section>
+
+      <!-- ⑥ 联系（终端卡片） -->
+      <section class="card card-term module" id="contact" data-card="contact" data-nav="contact">
+        <div class="term-bar">
+          <span class="term-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="term-path">xuzihan@tju: ~/about</span>
+        </div>
+        <pre class="term-body" id="termBody"></pre>
+      </section>
+
+      <!-- ⑦ 引导条（在中列下方的空地上）：一句话把有意见的人指到留言页去。
+           故意不加 .card / data-card —— 它不是内容卡片，不参与拖拽，也不进「归位」。 -->
+      <aside class="ask-guide" id="askGuide">
+        <span class="ask-guide-ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-11 6.6L4.5 19.5l1.4-4A7.5 7.5 0 1 1 20 11.5z" /></svg>
+        </span>
+        <p class="ask-guide-txt">
+          哪里别扭、想加点什么？
+          <span class="dim">去留言说一句，我照着改</span>
+        </p>
+        <a class="ask-guide-btn" href="#/guestbook">
+          去留言
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13" /><path d="M13 6l6 6-6 6" /></svg>
+        </a>
+      </aside>
+    </main>
+
+    <!-- ===== 独立页面：由 hash 路由切换，默认全隐藏（见 js/router.js） ===== -->
+    <div class="pages" id="pages">
+
+      <!-- 详情：个人信息 -->
+      <section class="page" data-page="detail" hidden>
+        <div class="page-head">
+          <h2>详情</h2>
+          <p class="page-lead">我的个人信息</p>
+        </div>
+
+        <div class="page-body">
+          <p>我是徐子涵，天津大学香港理工大学深圳未来技术学院智能医学工程专业大一在读。喜欢把想法尽快做成能看得见、跑得起来的东西 —— 哪怕很小，先做出来，再一版一版改。</p>
+          <p>平时主要折腾三件事：编程、乒乓球、数学建模。一个练把问题讲清楚，一个练反应和专注，一个练把现实里的问题拆成能算的形式。这个主页就是我把它们凑在一起的地方。</p>
+        </div>
+
+        <h3 class="blk-title">兴趣爱好</h3>
+        <ul class="like-list">
+          <li class="like-item">
+            <span class="like-ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="10" r="6.6" /><path d="M7.2 15.4 4.6 20.6" /></svg>
+            </span>
+            <div class="like-txt">
+              <h4>乒乓球</h4>
+              <p>课间和周末的固定安排。球小、球速快，最练专注和反应。</p>
+            </div>
+          </li>
+          <li class="like-item">
+            <span class="like-ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M9 7.5 4.5 12 9 16.5" /><path d="M15 7.5 19.5 12 15 16.5" /></svg>
+            </span>
+            <div class="like-txt">
+              <h4>编程</h4>
+              <p>从 Python 小工具开始（BMI、温度换算、进制转换这些），现在能独立做出一个网页。</p>
+            </div>
+          </li>
+          <li class="like-item">
+            <span class="like-ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 4v16h16" /><path d="M7 16.5 11.5 11l3 3L20 7" /></svg>
+            </span>
+            <div class="like-txt">
+              <h4>数学建模</h4>
+              <p>喜欢把现实问题翻译成公式和代码，再用跑出来的结果反过来检查自己的假设。</p>
+            </div>
+          </li>
+        </ul>
+
+        <h3 class="blk-title">基本信息</h3>
+        <ul class="contact-list">
+          <li>
+            <span class="ct-key">姓名</span>
+            <span>徐子涵</span>
+          </li>
+          <li>
+            <span class="ct-key">学校</span>
+            <span>天津大学香港理工大学深圳未来技术学院</span>
+          </li>
+          <li>
+            <span class="ct-key">专业</span>
+            <span>智能医学工程</span>
+          </li>
+          <li>
+            <span class="ct-key">年级</span>
+            <span>大一在读</span>
+          </li>
+        </ul>
+
+        <div class="page-foot">
+          <a class="page-btn" href="#/contact">联系方式</a>
+          <a class="page-btn ghost" href="#/">回首页</a>
+        </div>
+      </section>
+
+      <!-- 留言 -->
+      <section class="page" data-page="guestbook" hidden>
+        <div class="page-head">
+          <h2>留言</h2>
+          <p class="page-lead">给我留句话吧</p>
+        </div>
+        <form class="gb-form" id="guestForm">
+          <input type="text" id="guestName" maxlength="16" placeholder="你的名字（可留空）" autocomplete="off" />
+          <textarea id="guestText" rows="3" maxlength="200" placeholder="想说的话…"></textarea>
+          <div class="gb-actions">
+            <span class="gb-tip" id="guestTip">留言公开可见，点开这个链接的人都能看到；昵称可以留空。</span>
+            <button class="page-btn" type="submit">发布</button>
+          </div>
+        </form>
+        <ul class="gb-list" id="guestList"></ul>
+      </section>
+
+      <!-- 项目 -->
+      <section class="page" data-page="projects" hidden>
+        <div class="page-head">
+          <h2>项目</h2>
+          <p class="page-lead">做过的东西 · 前四个点「试一下」能直接用</p>
+        </div>
+
+        <div class="proj-grid">
+          <article class="proj-card">
+            <h3>计算 BMI</h3>
+            <p class="proj-meta">Python · 2026</p>
+            <p>输入身高和体重算出 BMI。身高、体重明显不合常理时会提示单位写错了，不会硬算。</p>
+            <button class="page-btn ghost proj-toggle" type="button" data-open="tool-bmi" aria-expanded="false" aria-controls="tool-bmi">试一下</button>
+            <div class="proj-tool" id="tool-bmi" hidden>
+              <label class="tool-row">
+                <span class="tool-key">身高 (m)</span>
+                <input type="number" id="bmiH" step="0.01" inputmode="decimal" placeholder="1.75" />
+              </label>
+              <label class="tool-row">
+                <span class="tool-key">体重 (kg)</span>
+                <input type="number" id="bmiW" step="0.1" inputmode="decimal" placeholder="65" />
+              </label>
+              <button class="page-btn" type="button" data-run="bmi">算 BMI</button>
+              <p class="tool-out" id="bmiOut" role="status" aria-live="polite"></p>
+            </div>
+          </article>
+
+          <article class="proj-card">
+            <h3>摄氏 / 华氏转换</h3>
+            <p class="proj-meta">Python · 2026</p>
+            <p>把摄氏度换算成华氏度，结果保留一位小数。输入不是数字会提示重试，不会崩。</p>
+            <button class="page-btn ghost proj-toggle" type="button" data-open="tool-temp" aria-expanded="false" aria-controls="tool-temp">试一下</button>
+            <div class="proj-tool" id="tool-temp" hidden>
+              <label class="tool-row">
+                <span class="tool-key">摄氏 (℃)</span>
+                <input type="number" id="tempC" step="0.1" inputmode="decimal" placeholder="25" />
+              </label>
+              <button class="page-btn" type="button" data-run="temp">转成华氏</button>
+              <p class="tool-out" id="tempOut" role="status" aria-live="polite"></p>
+            </div>
+          </article>
+
+          <article class="proj-card">
+            <h3>进制转换</h3>
+            <p class="proj-meta">Python · 2026</p>
+            <p>在 2 到 10 进制之间互相转换，输入的数字会先按源进制校验合不合法，再逐位算出来。</p>
+            <button class="page-btn ghost proj-toggle" type="button" data-open="tool-base" aria-expanded="false" aria-controls="tool-base">试一下</button>
+            <div class="proj-tool" id="tool-base" hidden>
+              <div class="tool-row">
+                <span class="tool-key">进制</span>
+                <input type="number" id="baseFrom" min="2" max="10" step="1" inputmode="numeric" placeholder="10" value="10" />
+                <span class="tool-arrow">到</span>
+                <input type="number" id="baseTo" min="2" max="10" step="1" inputmode="numeric" placeholder="2" value="2" />
+              </div>
+              <label class="tool-row">
+                <span class="tool-key">数字</span>
+                <input type="text" id="baseNum" inputmode="numeric" placeholder="255" autocomplete="off" />
+              </label>
+              <button class="page-btn" type="button" data-run="base">转换</button>
+              <p class="tool-out" id="baseOut" role="status" aria-live="polite"></p>
+            </div>
+          </article>
+
+          <article class="proj-card">
+            <h3>斐波那契第 x 项</h3>
+            <p class="proj-meta">Python · 2026</p>
+            <p>算出斐波那契数列的第 x 项。用循环一步步往前推，不用递归，所以项数大也不会卡死。</p>
+            <button class="page-btn ghost proj-toggle" type="button" data-open="tool-fib" aria-expanded="false" aria-controls="tool-fib">试一下</button>
+            <div class="proj-tool" id="tool-fib" hidden>
+              <label class="tool-row">
+                <span class="tool-key">第几项</span>
+                <input type="number" id="fibN" min="1" max="500" step="1" inputmode="numeric" placeholder="30" />
+              </label>
+              <button class="page-btn" type="button" data-run="fib">算出来</button>
+                <p class="tool-out" id="fibOut" role="status" aria-live="polite"></p>
+              </div>
+            </article>
+
+          <article class="proj-card">
+            <h3>班级课程表</h3>
+            <p class="proj-meta">网页 · PWA · 2026</p>
+            <p>给班里做的课表网页：按周显示每天的课与作息，做了手机 / 电脑两套版面，带当前位置的天气与分时预报，还能装到桌面，断网也能打开。</p>
+            <a class="page-btn ghost" href="https://xuzihan115.github.io/26shangying2-timetable-2/" target="_blank" rel="noopener">打开看看</a>
+          </article>
+          </div>
+
+
+        <article class="proj-card proj-wide">
+          <h3>这个主页本身</h3>
+          <p class="proj-meta">Vibe Coding · 2026</p>
+          <p>纯 HTML / CSS / JS 从零写起，一版一版改出来的个人主页：可拖拽卡片、汉字笔顺、数码管时钟、太阳与月亮。</p>
+          <button class="page-btn ghost proj-toggle" type="button" data-open="tech-detail" aria-expanded="false" aria-controls="tech-detail">看技术细节</button>
+          <div class="proj-tool" id="tech-detail" hidden>
+            <ol class="detail-list">
+              <li>
+                <h3>可拖拽的卡片主页</h3>
+                <p>六张卡片绝对定位排成三列，用指针事件实现拖动，位置记在浏览器里；左上角「归位」一键还原，窄屏自动变单列。</p>
+              </li>
+              <li>
+                <h3>汉字笔顺</h3>
+                <p>名字用 hanzi-writer 的笔顺数据逐笔写出来，写完停一下再清空重写，笔画带渐变描边。</p>
+              </li>
+              <li>
+                <h3>数码管时钟</h3>
+                <p>七段数码管用 CSS 画，每秒刷新，配日期和按时段变的问候语。</p>
+              </li>
+              <li>
+                <h3>太阳与月亮</h3>
+                <p>Three.js 写自定义着色器：太阳是程序化日面加日珥弧环和临边昏暗；月亮用 NASA LRO 反照率贴图现场派生高度，做出月海起伏。点一下就能互换。</p>
+              </li>
+            </ol>
+          </div>
+        </article>
+      </section>
+
+      <!-- 联系 -->
+      <section class="page" data-page="contact" hidden>
+        <div class="page-head">
+          <h2>联系</h2>
+          <p class="page-lead">想聊两句随时找我</p>
+        </div>
+        <ul class="contact-list">
+          <li>
+            <span class="ct-key">邮箱</span>
+            <a href="mailto:xzh_080115@tju.edu.cn">xzh_080115@tju.edu.cn</a>
+          </li>
+          <li>
+            <span class="ct-key">QQ</span>
+            <span>2941923433</span>
+          </li>
+          <li>
+            <span class="ct-key">学校</span>
+            <span>天津大学香港理工大学深圳未来技术学院 · 智能医学工程</span>
+          </li>
+        </ul>
+
+        <figure class="contact-cat">
+          <img src="assets/cat-peek.jpg" width="512" height="768" alt="一只从木箱缝里探出头来的猫" loading="lazy" decoding="async" />
+          <figcaption>探头看你在不在。</figcaption>
+        </figure>
+      </section>
+
+    </div>
+
+    <!-- ===== 底部提示 ===== -->
+    <footer class="hintbar">
+      <span>拖动卡片可自由摆放，点左上角「归位」还原</span>
+      <span class="sep" aria-hidden="true">·</span>
+      <span>点一下太阳会变成月亮</span>
+      <span class="sep" aria-hidden="true">·</span>
+      <span>© <span id="year">2026</span> 徐子涵</span>
+    </footer>
+
+    <!-- ===== 脚本：自检 → 第三方库 → 数据 → 模块 → 入口 ===== -->
+    <script src="js/diag.js"></script>
+    <script src="js/three.min.js"></script>
+    <script src="js/hanzi.js"></script>
+    <script src="js/sun-moon.js"></script>
+    <script src="js/modules.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/pages.js"></script>
+    <script src="js/tools.js"></script>
+    <script src="js/mood.js"></script>
+    <script src="js/cursor.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
