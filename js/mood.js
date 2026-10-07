@@ -117,8 +117,8 @@
   };
 
   var lastPick = { sun: -1, moon: -1 }; // 上一次挑中的下标，用来避开「连出同一幅」
-  var preloaded = {}; // 哪一天色的画已经预取过了
-  var preloadCache = []; // 留住 Image 对象，免得还没下完就被回收掉
+  var warmed = {}; // 已经预取过的画（按文件名记，两个天色共用一张表也不会重复取）
+  var warmCache = []; // 留住 Image 对象，免得还没下完就被回收掉
 
   /* 在 0..len-1 里随机挑一个，尽量不跟上次相同 */
   function pickIndex(name) {
@@ -149,6 +149,16 @@
     if (el.artTitle) el.artTitle.textContent = item.title;
     if (el.artArtist) el.artArtist.textContent = item.artist + " · " + item.year;
 
+    // 正在看画的时候顺手把下一张也取上，点一下换图不会先白一下。
+    // 这纯属锦上添花，万一预取出岔子也不能影响「把画显示出来」这件事。
+    if (muse) {
+      try {
+        warmAround();
+      } catch (e) {
+        D.err("mood.warm", e);
+      }
+    }
+
     D.note("mood", { painting: item.file, phase: name, idx: idx });
     return true;
   }
@@ -172,23 +182,86 @@
     showPainting(name, idx);
   }
 
-  /* 闲下来的时候把这组画预取一遍，免得淡入时先白一下。
-     用户开了省流量就跳过（一张画几百 KB，一组也有几 MB）。 */
-  function preload(name) {
-    if (preloaded[name]) return;
+  /* 预取要下的是几 MB 的画，所以分三种情况：
+       · 桌面、网速正常：闲下来就把当前这组整组取好，点「联想一下」时不会先白一下；
+       · 窄屏（手机）：闲下来一张都不取，改成手碰到按钮才开始取（warmOnIntent），
+         省下那几 MB —— 手机访客多半只是想先看看主页，不一定开画作模式；
+       · 省流量 / 2G / 3G：任何情况下都只取 1 张，也就是躲不掉的那张下限。 */
+
+  function isNarrow() {
+    try {
+      return !!(window.matchMedia && window.matchMedia("(max-width: 900px)").matches);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function metered() {
+    var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (!conn) return false;
+    if (conn.saveData) return true;
+    var t = conn.effectiveType || "";
+    return t === "slow-2g" || t === "2g" || t === "3g";
+  }
+
+  /* 取 GALLERY[name] 里的第 idx 张。取过就跳过。 */
+  function preloadOne(name, idx) {
+    var list = GALLERY[name];
+    if (!list || !list[idx]) return;
+    var file = list[idx].file;
+    if (warmed[file]) return;
+    warmed[file] = true;
+    // 没有 Image 就干脆不预取。这只是锦上添花，绝不能反过来把「看画」带崩。
+    if (typeof window.Image !== "function") return;
+    var img = new window.Image();
+    img.decoding = "async";
+    img.src = file;
+    warmCache.push(img); // 留住引用，免得还没下完就被回收
+  }
+
+  /* 取一组里的前 max 张（不传 max 就是整组）。省流量 / 慢网一律压到 1 张。 */
+  function preloadGroup(name, max) {
     var list = GALLERY[name];
     if (!list || !list.length) return;
-    var conn = navigator.connection;
-    if (conn && conn.saveData) return;
-    preloaded[name] = true;
-
-    for (var i = 0; i < list.length; i++) {
-      var img = new window.Image();
-      img.decoding = "async";
-      img.src = list[i].file;
-      preloadCache.push(img);
+    var n = typeof max === "number" ? max : list.length;
+    if (n > list.length) n = list.length;
+    var capped = false;
+    if (n > 1 && metered()) {
+      n = 1;
+      capped = true;
     }
-    D.note("mood", { preload: name, n: list.length });
+    for (var i = 0; i < n; i++) preloadOne(name, i);
+    if (n > 0) D.note("mood", { preload: name, n: n, capped: capped });
+  }
+
+  /* 闲下来时的默认动作：窄屏一张不取，其余整组取好。
+     名字沿用 preload，paintPhase / init 里已有的调用点就不用跟着动了。 */
+  function preload(name) {
+    preloadGroup(name, isNarrow() ? 0 : undefined);
+  }
+
+  /* 手一碰上「联想一下」就开始取：悬停 / 键盘聚焦 / 触摸按下都算。
+     桌面是「还没点就已经备好」，手机是「按下去才开始取」，两边都不浪费。 */
+  function warmOnIntent() {
+    var btn = el.museBtn || $("museBtn");
+    if (!btn || typeof btn.addEventListener !== "function") return;
+    function warm() {
+      preloadGroup(phase === "moon" ? "moon" : "sun");
+    }
+    btn.addEventListener("pointerenter", warm);
+    btn.addEventListener("focus", warm);
+    btn.addEventListener("touchstart", warm, { passive: true });
+  }
+
+  /* 正在看的这张 + 下一张：画作模式里点一下就是下一张，提前备好不会先白一下。 */
+  function warmAround() {
+    var name = phase === "moon" ? "moon" : "sun";
+    var list = GALLERY[name];
+    if (!list || !list.length) return;
+    var cur = lastPick[name];
+    var idx = cur < 0 ? 0 : cur;
+    preloadOne(name, idx);
+    preloadOne(name, (idx + 1) % list.length);
   }
 
   function onIdle(fn) {
@@ -306,6 +379,7 @@
     }
 
     syncMuseBtn();
+    warmOnIntent();
     onIdle(function () {
       preload(phase);
     });

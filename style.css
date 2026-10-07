@@ -571,15 +571,10 @@ body.bg-sun .live-dot {
   transition: opacity 0.9s ease, transform 2.4s ease;
 }
 
-/* 太阳状态 → 莫奈《日出·印象》 */
-.painting-sun {
-  background-image: url("assets/monet-impression-sunrise.jpg");
-}
-
-/* 月亮状态 → 梵高《星空》 */
-.painting-moon {
-  background-image: url("assets/van-gogh-starry-night.jpg");
-}
+/* 这两幅画的图**故意不写在这里**。
+   写在 CSS 里的话，浏览器一进页面就会把它们下下来（《日出·印象》172KB + 《星空》595KB，
+   合计约 767KB），可这一层平时是 opacity: 0、压根看不见 —— 等于每个访客都白下这 767KB。
+   真要显示的时候由 mood.js 的 showPainting() 把 background-image 设到元素上，那时才下。 */
 
 body.muse.bg-sun .painting-sun,
 body.muse.bg-moon .painting-moon {
