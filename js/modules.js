@@ -46,6 +46,17 @@
     return window.matchMedia("(max-width: 900px)").matches;
   }
 
+  /* 系统里有没有开「减少动态效果」（iOS 的减弱动态效果、Windows 的显示动画）。
+     开了就把几处停不下来的动画直接摆成静止的终态：名字不一遍遍写、
+     终端不逐字打、太阳月亮不自转。别的交互一个都不少。 */
+  var REDUCE = (function () {
+    try {
+      return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    } catch (e) {
+      return false;
+    }
+  })();
+
   /* ============================================================
      1. 卡片拖拽系统：自由摆放 + 一键归位
         位置不做持久化 —— 每次刷新页面都回到 CSS 里设计好的初始位置，
@@ -390,6 +401,25 @@
       if (caret) caret.classList.add("on");
     }
 
+    if (REDUCE) {
+      // 系统要求减少动态效果：不一遍遍写，直接把名字以写好的终态摆出来
+      reset();
+      for (var ru = 0; ru < units.length; ru++) {
+        for (var ri = 0; ri < units[ru].strokes.length; ri++) {
+          var rs = units[ru].strokes[ri];
+          rs.done = true;
+          rs.shown = true;
+          rs.poly.setAttribute("opacity", "1");
+          rs.poly.setAttribute("stroke-dashoffset", "0");
+          rs.solid.setAttribute("opacity", "1");
+        }
+      }
+      row.style.opacity = "1";
+      if (caret) caret.classList.remove("on");
+      D.note("name", { chars: chars.join(""), strokes: totalStrokes, mode: "reduced-motion" });
+      return;
+    }
+
     Ticker.add(function (dt, now) {
       if (t0 === null) t0 = now;
 
@@ -622,6 +652,19 @@
         body.appendChild(ln);
       }
       if (!done) body.appendChild(cursor);
+    }
+
+    if (REDUCE) {
+      // 系统要求减少动态效果：不逐字打，四行一次摆出来
+      lineEls = lines.map(function (parts) {
+        return parts.map(function (p) {
+          return { full: p.t, c: p.c, shown: p.t.length };
+        });
+      });
+      done = true;
+      render();
+      D.note("terminal", { lines: lines.length, done: true, mode: "reduced-motion" });
+      return;
     }
 
     Ticker.add(function (dt) {

@@ -20,6 +20,16 @@
   var D = window.__DIAG;
   var R = 1.0; // 星球半径
 
+  /* 系统里开了「减少动态效果」没有。开了就让自转、日珥、抛射都停下来，
+     只把当前画面画出来 —— 切换太阳/月亮那下淡入淡出照旧（那是跟着用户操作走的）。 */
+  var REDUCE = (function () {
+    try {
+      return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    } catch (e) {
+      return false;
+    }
+  })();
+
   /* ============================================================
      着色器公共部分
      ============================================================ */
@@ -1072,15 +1082,18 @@
       elapsed += dt;
       t += dt;
 
-      // 自转
-      sunGroup.rotation.y += dt * 0.075;
-      moonGroup.rotation.y += dt * 0.02;
+      // 开了「减少动态效果」就把这些停不下来的动画冻住：不自转、日面不翻、日珥不吐。
+      if (!REDUCE) {
+        // 自转
+        sunGroup.rotation.y += dt * 0.075;
+        moonGroup.rotation.y += dt * 0.02;
+      }
 
       // 太阳表面动画
-      sunMat.uniforms.uTime.value = t;
+      sunMat.uniforms.uTime.value = REDUCE ? 0 : t;
 
-      // 日珥
-      var sunOn = sunMat.uniforms.uOpacity.value;
+      // 日珥（REDUCE 时 sunOn 为 0，弧环整体透明）
+      var sunOn = REDUCE ? 0 : sunMat.uniforms.uOpacity.value;
       for (var i = 0; i < arcs.length; i++) {
         var arc = arcs[i];
         arc.life -= dt;
@@ -1092,11 +1105,13 @@
         arc.mesh.scale.setScalar(arc.scaleBase * (1 + 0.04 * Math.sin(ph)));
       }
 
-      // 日珥抛射
-      nextErupt -= dt;
-      if (nextErupt <= 0) {
-        erupt();
-        nextErupt = 16 + Math.random() * 14;
+      // 日珥抛射：减少动态效果时不再吐新的
+      if (!REDUCE) {
+        nextErupt -= dt;
+        if (nextErupt <= 0) {
+          erupt();
+          nextErupt = 16 + Math.random() * 14;
+        }
       }
       var dirty = false;
       for (var pi = 0; pi < PCOUNT; pi++) {
