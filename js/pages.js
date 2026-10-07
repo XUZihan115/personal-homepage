@@ -19,9 +19,9 @@
      anon key 是给前端用的公开钥匙，进仓库、推上 Pages 都没问题；
      安全靠数据库上的 RLS 规则兜着。千万别把 service_role key 填这儿，那个能删库。
      ------------------------------------------------------------ */
-  var SUPABASE_URL = "https://zsrymnmccnxcymtiysap.supabase.co";
+  var SUPABASE_URL = "https://qgmqoorithwrniatgyvx.supabase.co";
   /* 新版公开 key（sb_publishable_ 开头），就是原来的 anon key，一样是给前端用的、进仓库没关系 */
-  var SUPABASE_ANON_KEY = "sb_publishable_qrbHMWdskGfXDC2XkytgtQ_E6giC1jw";
+  var SUPABASE_ANON_KEY = "sb_publishable_lvop2WW9nduItUOIHbJxTA_yD6kSUIp";
   var TABLE = "messages";
   var FETCH_LIMIT = 100;
 
