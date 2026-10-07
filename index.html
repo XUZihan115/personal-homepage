@@ -8,6 +8,25 @@
     <title>选择设备 · 徐子涵</title>
     <link rel="stylesheet" href="style.css" />
 
+    <!-- 标签页图标：一个小月牙。矢量图，1KB 上下，跟着页面一起缓存 -->
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="favicon.svg" />
+
+    <!-- 分享出去的时候要有标题 / 简介 / 配图可看（微信、QQ、Twitter 都读这几条）。
+         地址必须写全：抓分享卡片的程序不会替你猜域名。 -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="徐子涵 · 个人主页" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:title" content="徐子涵 · 个人主页" />
+    <meta property="og:description" content="先选一下你是用手机还是电脑打开 —— 选过就会记住。" />
+    <meta property="og:url" content="https://xuzihan115.github.io/personal-homepage/" />
+    <meta property="og:image" content="https://xuzihan115.github.io/personal-homepage/assets/monet-impression-sunrise.jpg" />
+    <meta property="og:image:alt" content="莫奈《日出·印象》" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="徐子涵 · 个人主页" />
+    <meta name="twitter:description" content="先选一下你是用手机还是电脑打开 —— 选过就会记住。" />
+    <meta name="twitter:image" content="https://xuzihan115.github.io/personal-homepage/assets/monet-impression-sunrise.jpg" />
+
     <!-- ===== 记忆判断：必须放在最前面 =====
          写在 <head> 里、且在浏览器开始画页面之前跑，命中记忆就直接 replace 走人，
          所以老访客连「闪一下选择页」都不会看到。
@@ -23,8 +42,13 @@
 
         var force = String(location.search || "").indexOf("switch=1") >= 0;
 
+        // 分享出去的链接常带着一段 hash（比如 .../#/projects）。替访客跳走的时候
+        // 把它一起捎上，否则他一点进来就被丢回首页，看不到别人想给他看的那一页。
+        var hash = String(location.hash || "");
+        if (hash === "#") hash = "";
+
         if (!force && (saved === "mobile" || saved === "desktop")) {
-          location.replace(saved === "mobile" ? "mobile.html" : "desktop.html");
+          location.replace((saved === "mobile" ? "mobile.html" : "desktop.html") + hash);
         }
       })();
     </script>
@@ -273,6 +297,15 @@
         function remember(e) {
           var mode = e.currentTarget.getAttribute("data-pick");
           var ok = true;
+
+          // 带着 hash 一起走：别人分享的 .../#/projects 这种链接，
+          // 选完设备之后还该落在同一页上，不能一选就把目标丢回首页。
+          var here = window.location.hash || "";
+          if (here.length > 1) {
+            var link = e.currentTarget.getAttribute("href") || "";
+            if (link) e.currentTarget.setAttribute("href", link.split("#")[0] + here);
+          }
+
           try {
             localStorage.setItem("xz_device", mode);
           } catch (err) {
