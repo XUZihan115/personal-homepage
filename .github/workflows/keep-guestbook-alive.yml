@@ -1,0 +1,62 @@
+# 每 3 天碰一下留言库，别让它再因为「闲置」被 Supabase 收走。
+#
+# 为什么需要：Supabase 免费层会把一周没人访问的项目暂停（久了会被删）。
+# 上一个库（zsrymnmccnxcymtiysap）就是这么没的，网页一直显示「暂时连不上留言库」。
+# 这里只是照网页的方式做一次只读查询，等于有人访问过一次。
+#
+# 地址和钥匙都不写在这个文件里，而是从 js/pages.js 里读 ——
+# 以后换项目只改 js/pages.js 一处，这里不用跟着改。
+#
+# 什么时候它不会打扰你：
+#   · js/pages.js 里没填地址（本机模式）→ 直接跳过，不算失败。
+#   · GitHub 自己的限制：仓库连续 60 天没有任何提交后，它会停掉定时任务。
+#     真到那天，随手提交一处改动，或在 Actions 页面手动 Run 一次就续上了。
+name: keep-guestbook-alive
+
+on:
+  schedule:
+    # 每 3 天的 03:17 UTC（北京时间 11:17）跑一次
+    - cron: "17 3 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    name: 给留言库打个招呼
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 从 js/pages.js 读出地址和公开钥匙
+        id: cfg
+        run: |
+          url=$(grep -oE '"https://[a-z0-9]+\.supabase\.co"' js/pages.js | head -n1 | tr -d '"' || true)
+          key=$(grep -oE '"(sb_publishable_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9._-]+)"' js/pages.js | head -n1 | tr -d '"' || true)
+          echo "读到地址：${url:-（空）}"
+          echo "读到钥匙：${key:0:14}…（共 ${#key} 字符）"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: 没接公开库就跳过（本机模式，不用探活）
+        if: steps.cfg.outputs.url == ''
+        run: echo "js/pages.js 里没填 SUPABASE_URL，留言板在本机模式。"
+
+      - name: 探活
+        if: steps.cfg.outputs.url != ''
+        env:
+          SUPA_URL: ${{ steps.cfg.outputs.url }}
+          SUPA_KEY: ${{ steps.cfg.outputs.key }}
+        run: |
+          code=$(curl -sS -o /tmp/body.json -w '%{http_code}' --max-time 30 \
+            "$SUPA_URL/rest/v1/messages?select=id&limit=1" \
+            -H "apikey: $SUPA_KEY" \
+            -H "Authorization: Bearer $SUPA_KEY")
+          echo "HTTP $code"
+          echo "回应：$(head -c 300 /tmp/body.json)"
+          if [ "$code" != "200" ]; then
+            echo "::error::留言库没有回 200（HTTP $code）。去 https://supabase.com/dashboard 看看项目是不是被暂停了。"
+            exit 1
+          fi
+          echo "留言库还活着。"
