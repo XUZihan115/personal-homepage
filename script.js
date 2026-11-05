@@ -48,6 +48,7 @@
     var T = window.Tools || {};
     var Mo = window.Mood || {};
     var C = window.CursorFX || {};
+    var A = window.Avatar || {};
 
     /* ⓪ 路由：先按 hash 决定显示首页卡片还是某个独立页面（必须先跑，后面才拿得到正确尺寸） */
     safe("router", R.init);
@@ -71,6 +72,8 @@
     safe("mood", Mo.init);
     /* ⑩ 光标：换一套光标图案（在 CSS 里）+ 划过背景时的涟漪（触屏 / 减少动态效果下自动关） */
     safe("cursorFx", C.init);
+    /* ⑪ 数字分身：DeepSeek 大模型驱动的聊天卡片（界面自带欢迎语，不依赖网络也能渲染） */
+    safe("avatar", A.init);
 
     /* 页脚年份 */
     var y = document.getElementById("year");

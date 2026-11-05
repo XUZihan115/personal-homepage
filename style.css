@@ -1260,7 +1260,166 @@ body.muse .corner-muse {
   animation: blink 1.05s steps(1, end) infinite;
 }
 
-/* ---------- ⑦ 引导条：把想提意见的人指到留言页 ---------- */
+/* ---------- ⑦ 数字分身卡片：聊天界面 ---------- */
+/* 初始位置在中列、终端卡片正下方（终端 top 42% 结束约在 62% 附近） */
+.card-avatar {
+  left: calc(50% - 151px);
+  top: 60%;
+  width: 362px;
+}
+
+.chat {
+  height: 264px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 11px;
+  padding-right: 3px;
+  scrollbar-width: thin;
+}
+
+.chat-msg {
+  display: flex;
+  max-width: 100%;
+}
+
+.chat-msg.bot {
+  justify-content: flex-start;
+}
+
+.chat-msg.me {
+  justify-content: flex-end;
+}
+
+.chat-bubble {
+  max-width: 86%;
+  font-size: 12.5px;
+  line-height: 1.55;
+  padding: 7px 11px;
+  border-radius: 12px;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.chat-msg.bot .chat-bubble {
+  background: rgba(127, 182, 255, 0.1);
+  border: 1px solid rgba(127, 182, 255, 0.22);
+  color: #d8dce4;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-msg.me .chat-bubble {
+  background: rgba(255, 199, 107, 0.1);
+  border: 1px solid rgba(255, 199, 107, 0.24);
+  color: #e8e2d4;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-msg.err .chat-bubble {
+  background: rgba(224, 108, 98, 0.09);
+  border-color: rgba(224, 108, 98, 0.3);
+  color: #e6cfcc;
+}
+
+/* 输入中的三个小点 */
+.chat-msg.typing .chat-bubble {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 12px;
+}
+
+.chat-msg.typing i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #9fb6d8;
+  animation: typing-dot 1.1s ease-in-out infinite;
+}
+
+.chat-msg.typing i:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.chat-msg.typing i:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-msg.typing i {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+.chat-form {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.chat-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  color: #d8dce4;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 11px;
+  outline: none;
+  transition: border-color 0.18s;
+}
+
+.chat-input:focus {
+  border-color: rgba(127, 182, 255, 0.45);
+}
+
+.chat-input:disabled {
+  opacity: 0.55;
+}
+
+.chat-send {
+  flex: none;
+  font-size: 12px;
+  color: #0f1216;
+  background: var(--amber);
+  border: none;
+  border-radius: 10px;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: filter 0.18s, transform 0.18s;
+}
+
+.chat-send:hover {
+  filter: brightness(1.08);
+}
+
+.chat-send:active {
+  transform: translateY(1px);
+}
+
+.chat-form.busy .chat-send {
+  filter: grayscale(0.6);
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ---------- ⑧ 引导条：把想提意见的人指到留言页 ---------- */
 /* 它刻意没有 .card —— eachCard() 抓的是 stage.querySelectorAll(".card")，
    所以它不进拖拽、不进「归位」，也不会被算进卡片数。
    固定在视口底部正中间：不管窗口多宽、多矮，卡片被拖到哪儿，
@@ -1388,7 +1547,8 @@ body.muse .corner-muse {
     width: 340px;
   }
   .card-clock,
-  .card-term {
+  .card-term,
+  .card-avatar {
     left: calc(50% - 155px);
     width: 340px;
   }
@@ -1434,6 +1594,9 @@ body.muse .corner-muse {
   }
   .card-term {
     order: 6;
+  }
+  .card-avatar {
+    order: 7;
   }
   /* 手机上它照样 fixed 在页面最下面正中间，不再排进单列文档流里。
      宽度由 min(362px, 100vw - 28px) 收窄，两边各留 14px。 */
