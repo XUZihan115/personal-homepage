@@ -195,7 +195,22 @@
         <pre class="term-body" id="termBody"></pre>
       </section>
 
-      <!-- ⑦ 引导条（在中列下方的空地上）：一句话把有意见的人指到留言页去。
+      <!-- ⑦ 数字分身（DeepSeek 大模型驱动的「数字徐子涵」，见 js/avatar.js） -->
+      <section class="card card-avatar module" id="avatar" data-card="avatar" data-nav="avatar">
+        <div class="card-label">
+          <span class="live-dot" aria-hidden="true"></span>
+          <span>数字分身 · 问子涵</span>
+          <span class="label-right dim">DeepSeek 驱动</span>
+        </div>
+        <div class="chat" id="chatBox" role="log" aria-live="polite"></div>
+        <form class="chat-form" id="chatForm" autocomplete="off">
+          <input class="chat-input" id="chatInput" type="text" maxlength="200"
+                 placeholder="问问子涵…" enterkeyhint="send" aria-label="给数字分身提问" />
+          <button class="chat-send" type="submit" aria-label="发送">发送</button>
+        </form>
+      </section>
+
+      <!-- ⑧ 引导条（在末列下方的空地上）：一句话把有意见的人指到留言页去。
            故意不加 .card / data-card —— 它不是内容卡片，不参与拖拽，也不进「归位」。 -->
       <aside class="ask-guide" id="askGuide">
         <span class="ask-guide-ic" aria-hidden="true">
@@ -397,7 +412,7 @@
             <ol class="detail-list">
               <li>
                 <h3>可拖拽的卡片主页</h3>
-                <p>六张卡片绝对定位排成三列，用指针事件实现拖动，位置记在浏览器里；左上角「归位」一键还原，窄屏自动变单列。</p>
+                <p>七张卡片绝对定位排成三列，用指针事件实现拖动，位置记在浏览器里；左上角「归位」一键还原，窄屏自动变单列。</p>
               </li>
               <li>
                 <h3>汉字笔顺</h3>
@@ -465,6 +480,8 @@
     <script src="js/tools.js"></script>
     <script src="js/mood.js"></script>
     <script src="js/cursor.js"></script>
+    <script src="js/avatar-knowledge.js"></script>
+    <script src="js/avatar.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

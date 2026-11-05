@@ -80,6 +80,9 @@ html.mobile .card-exp {
 html.mobile .card-term {
   order: 6;
 }
+html.mobile .card-avatar {
+  order: 7;
+}
 
 /* ============================================================
    3. 收掉「归位」和拖拽那套
@@ -136,7 +139,7 @@ html.mobile .ask-guide {
   left: auto;
   bottom: auto;
   transform: none;
-  order: 7;
+  order: 8;
   width: 100%;
   max-width: 620px;
   margin: 0;
