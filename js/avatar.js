@@ -1,4 +1,4 @@
-/* js/avatar.js —— 数字分身（第 ⑧ 张卡片）
+/* js/avatar.js —— 数字分身（独立页面 #/avatar，不再是主页上的卡片）
  *
  * 做法：前端直连 DeepSeek API（OpenAI 兼容格式），浏览器直接 fetch。
  * 数字分身的全部秘密都在下面这份 KNOWLEDGE 里：系统提示词 + 四份知识库，

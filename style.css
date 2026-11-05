@@ -1260,12 +1260,17 @@ body.muse .corner-muse {
   animation: blink 1.05s steps(1, end) infinite;
 }
 
-/* ---------- ⑦ 数字分身卡片：聊天界面 ---------- */
-/* 初始位置在中列、终端卡片正下方（终端 top 42% 结束约在 62% 附近） */
-.card-avatar {
-  left: calc(50% - 151px);
-  top: 60%;
-  width: 362px;
+/* ---------- 数字分身页面：聊天界面 ---------- */
+/* 分身不再是一张可拖拽的卡片，而是顶部导航里的独立页面（#/avatar）。
+   下面这段只调页面里的布局；.chat / .chat-bubble / .chat-form 等样式
+   从原卡片原样搬过来共用，见下方「聊天界面」各规则。 */
+.page-avatar {
+  max-width: 560px; /* 页面区本身 880px 宽，聊天收窄一点更像对话框 */
+  margin: 0 auto;
+}
+
+.page-avatar .chat {
+  height: 330px; /* 页面里地方比卡片大，对话区高一点 */
 }
 
 .chat {
@@ -1419,7 +1424,7 @@ body.muse .corner-muse {
   cursor: default;
 }
 
-/* ---------- ⑧ 引导条：把想提意见的人指到留言页 ---------- */
+/* ---------- ⑦ 引导条：把想提意见的人指到留言页 ---------- */
 /* 它刻意没有 .card —— eachCard() 抓的是 stage.querySelectorAll(".card")，
    所以它不进拖拽、不进「归位」，也不会被算进卡片数。
    固定在视口底部正中间：不管窗口多宽、多矮，卡片被拖到哪儿，
@@ -1547,8 +1552,7 @@ body.muse .corner-muse {
     width: 340px;
   }
   .card-clock,
-  .card-term,
-  .card-avatar {
+  .card-term {
     left: calc(50% - 155px);
     width: 340px;
   }
@@ -1594,9 +1598,6 @@ body.muse .corner-muse {
   }
   .card-term {
     order: 6;
-  }
-  .card-avatar {
-    order: 7;
   }
   /* 手机上它照样 fixed 在页面最下面正中间，不再排进单列文档流里。
      宽度由 min(362px, 100vw - 28px) 收窄，两边各留 14px。 */

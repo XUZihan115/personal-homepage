@@ -1,8 +1,8 @@
 /* router.js —— 极简 hash 路由
  *
- * 一个页面文件里同时装着「首页卡片」和四个独立页面（desktop.html / mobile.html 用的是同一套结构）：
+ * 一个页面文件里同时装着「首页卡片」和五个独立页面（desktop.html / mobile.html 用的是同一套结构）：
  *   #/ 或空 hash        → 首页（.stage 卡片 + 底部提示）
- *   #/detail #/guestbook #/projects #/contact
+ *   #/detail #/guestbook #/projects #/contact #/avatar
  *                       → 对应的 .page
  *
  * 切换只改 hidden 和 class，不刷新页面；浏览器的前进 / 后退键也能用。
@@ -13,13 +13,14 @@
 
   var D = window.__DIAG || { note: function () {}, err: function () {}, errors: [] };
 
-  var ROUTES = ["detail", "guestbook", "projects", "contact"];
+  var ROUTES = ["detail", "guestbook", "projects", "contact", "avatar"];
   var TITLES = {
     home: "徐子涵 · 个人主页",
     detail: "详情 · 徐子涵",
     guestbook: "留言 · 徐子涵",
     projects: "项目 · 徐子涵",
     contact: "联系 · 徐子涵",
+    avatar: "数字分身 · 徐子涵",
   };
 
   var stage = null;
