@@ -42,7 +42,7 @@ ai/
 ## 接入步骤（方案 A，已完成 ✅）
 
 1. 注册 platform.deepseek.com → 充值 → 创建 API key。
-2. 聊天 UI 已上线：`js/avatar.js`（对话区 + 输入框 + 发送按钮），已接入 `desktop.html`（第 7 张卡片「数字分身 · 问子涵」）和 `mobile.html`（单列第 7）。
+2. 聊天 UI 已上线：`js/avatar.js`（对话区 + 输入框 + 发送按钮）。数字分身是**独立页面**：`desktop.html` / `mobile.html` 里 `#/avatar` 分栏（顶部导航「数字分身」，在「联系」和「换设备」之间），已不在主界面卡片区（主页剩六张可拖拽卡片）。
 3. 调用方式：前端 fetch 直连 `https://api.deepseek.com/chat/completions`（OpenAI 兼容格式），system 消息 = system-prompt.md + 四份 knowledge/ 全部内容（内联在 avatar.js 的 KNOWLEDGE 常量里，与 ai/ 目录同步，改资料两处都要改）。
 4. 关键参数（写报告用）：
    - 模型：`deepseek-flash`（DeepSeek-V4.1-Flash-1017）

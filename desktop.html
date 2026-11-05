@@ -82,6 +82,7 @@
           <a href="#/guestbook" data-route="guestbook">留言</a>
           <a href="#/projects" data-route="projects">项目</a>
           <a href="#/contact" data-route="contact">联系</a>
+          <a href="#/avatar" data-route="avatar">数字分身</a>
           <a class="nav-switch" href="index.html?switch=1" title="重新选择用手机还是电脑打开">换设备</a>
         </nav>
       </div>
@@ -193,23 +194,9 @@
         <pre class="term-body" id="termBody"></pre>
       </section>
 
-      <!-- ⑦ 数字分身（模块四：DeepSeek 大模型驱动的「数字徐子涵」，见 js/avatar.js） -->
-      <section class="card card-avatar module" id="avatar" data-card="avatar" data-nav="avatar">
-        <div class="card-label">
-          <span class="live-dot" aria-hidden="true"></span>
-          <span>数字分身 · 问子涵</span>
-          <span class="label-right dim">DeepSeek 驱动</span>
-        </div>
-        <div class="chat" id="chatBox" role="log" aria-live="polite"></div>
-        <form class="chat-form" id="chatForm" autocomplete="off">
-          <input class="chat-input" id="chatInput" type="text" maxlength="200"
-                 placeholder="问问子涵…" enterkeyhint="send" aria-label="给数字分身提问" />
-          <button class="chat-send" type="submit" aria-label="发送">发送</button>
-        </form>
-      </section>
-
-      <!-- ⑧ 引导条（在中列下方的空地上）：一句话把有意见的人指到留言页去。
-           故意不加 .card / data-card —— 它不是内容卡片，不参与拖拽，也不进「归位」。 -->
+      <!-- ⑦ 引导条（在中列下方的空地上）：一句话把有意见的人指到留言页去。
+           故意不加 .card / data-card —— 它不是内容卡片，不参与拖拽，也不进「归位」。
+           数字分身不再是一张卡片：它有自己的独立页面，在顶部导航「联系」和「换设备」之间。 -->
       <aside class="ask-guide" id="askGuide">
         <span class="ask-guide-ic" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-11 6.6L4.5 19.5l1.4-4A7.5 7.5 0 1 1 20 11.5z" /></svg>
@@ -410,7 +397,7 @@
             <ol class="detail-list">
               <li>
                 <h3>可拖拽的卡片主页</h3>
-                <p>七张卡片绝对定位排成三列，用指针事件实现拖动，位置记在浏览器里；左上角「归位」一键还原，窄屏自动变单列。</p>
+                <p>六张卡片绝对定位排成三列，用指针事件实现拖动，位置记在浏览器里；左上角「归位」一键还原，窄屏自动变单列。</p>
               </li>
               <li>
                 <h3>汉字笔顺</h3>
@@ -454,6 +441,29 @@
           <img src="assets/cat-peek.jpg" width="512" height="768" alt="一只从木箱缝里探出头来的猫" loading="lazy" decoding="async" />
           <figcaption>探头看你在不在。</figcaption>
         </figure>
+      </section>
+
+      <!-- 数字分身（独立页面：顶部导航「数字分身」进入。
+           聊天 UI 和原来那张卡片共用同一套元素 id（chatBox / chatForm / chatInput），
+           js/avatar.js 无需改一行；DeepSeek 大模型驱动，见 js/avatar.js） -->
+      <section class="page page-avatar" data-page="avatar" hidden>
+        <div class="page-head">
+          <h2>数字分身</h2>
+          <p class="page-lead">DeepSeek 大模型做的「数字徐子涵」——他读过这个主页上的全部资料</p>
+        </div>
+        <div class="page-body">
+          <p>做过什么、怎么想的、用了什么技术，都能问他。他按主页上的公开资料回答，拿不准的事会老实说不聊。</p>
+        </div>
+        <div class="chat" id="chatBox" role="log" aria-live="polite"></div>
+        <form class="chat-form" id="chatForm" autocomplete="off">
+          <input class="chat-input" id="chatInput" type="text" maxlength="200"
+                 placeholder="问问子涵…" enterkeyhint="send" aria-label="给数字分身提问" />
+          <button class="chat-send" type="submit" aria-label="发送">发送</button>
+        </form>
+        <div class="page-foot">
+          <a class="page-btn" href="#/">回首页</a>
+          <a class="page-btn ghost" href="#/contact">找本人</a>
+        </div>
       </section>
 
     </div>
