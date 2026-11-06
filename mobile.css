@@ -61,23 +61,23 @@ html.mobile .card {
   transform: none;
 }
 
-/* 阅读顺序：先说人是谁 → 再看时间和天上的东西 → 最后技能 / 经历 / 联系方式 */
-html.mobile .card-intro {
+/* 阅读顺序：时间 → 自我介绍 → 技能 → 教育与实践 → 太阳 / 月亮 → 联想一下 */
+html.mobile .card-clock {
   order: 1;
 }
-html.mobile .card-clock {
+html.mobile .card-intro {
   order: 2;
 }
-html.mobile .card-celestial {
+html.mobile .card-skills {
   order: 3;
 }
-html.mobile .card-skills {
+html.mobile .card-exp {
   order: 4;
 }
-html.mobile .card-exp {
+html.mobile .card-celestial {
   order: 5;
 }
-html.mobile .card-term {
+html.mobile .card-muse {
   order: 6;
 }
 
@@ -87,11 +87,6 @@ html.mobile .card-term {
 /* 卡片在手机版里根本不移动，归位按钮没有意义，留着还占地方 */
 html.mobile #resetLayout {
   display: none;
-}
-
-/* 「归位」让出第一格之后，「联想一下」补到左上角去 */
-html.mobile .corner-muse {
-  top: max(17px, env(safe-area-inset-top, 0px));
 }
 
 /* ============================================================
@@ -147,4 +142,47 @@ html.mobile .hintbar {
   padding: 8px 16px calc(22px + env(safe-area-inset-bottom, 0px));
   gap: 6px;
   text-align: center;
+}
+
+/* ============================================================
+   6. 数字分身页：手机上不撑满视口，输入框自然跟在对话区下面
+   ------------------------------------------------------------
+   style.css 为了让桌面版「对话框贴底、对话区占满」，把 .page-avatar 做成了
+   纵向 flex、撑到视口高度，输入框 fixed 贴底。手机屏幕矮、还要留出滚动空间，
+   这里覆盖回普通流式排版：对话区高度固定、输入框正常跟在下面。
+   ============================================================ */
+html.mobile .page-avatar {
+  min-height: 0;
+  padding-bottom: 0;
+}
+
+html.mobile .page-avatar .chat {
+  height: 240px;
+  max-height: none;
+  flex: none;
+}
+
+html.mobile .page-avatar .chat-form {
+  position: static;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  z-index: auto;
+  width: auto;
+  margin-top: 11px;
+  padding: 0;
+  border: none;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html.mobile .page-avatar .page-foot {
+  /* 桌面版是 fixed 贴底（style.css），手机上放回文档流，自然跟在输入框下面 */
+  position: static;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  z-index: auto;
+  margin: 10px 0 0;
 }

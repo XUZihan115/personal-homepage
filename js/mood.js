@@ -2,13 +2,16 @@
  * mood.js —— 主页上两件「跟着天色走」的小事
  *
  * ① 背景色调：太阳 / 月亮一换，页面底色和光晕跟着换（body.bg-sun / body.bg-moon）。
- * ② 联想一下：按钮在「归位」下面。点了就把主页收起来，换上一幅天上的东西相衬的画，
- *             并在右下角标出作品名和作者。
- *             太阳 / 月亮各有一组画作（太阳 11 幅、月亮 6 幅，都是公有领域或 NASA 素材，且只收横版），
- *             每次按「联想一下」都从当前天色那一组里随机取一幅，不会连着两次给同一幅；
- *             看画的时候点一下画面就是看下一张，同一组里按顺序往下走，走到头绕回第一张；
+ * ② 联想一下：卡片里直接放一幅跟当前天色相衬的画（太阳 / 月亮各一组，
+ *             太阳 11 幅、月亮 6 幅，都是公有领域或 NASA 素材，且只收横版），
+ *             画下方是标题和作者，「下一张」按顺序换画，「全屏显示」把当前这幅
+ *             铺满整个页面（右下角标出作品名和作者）。
+ *             天色（太阳 ⇄ 月亮）一切换，卡片里的画就换成另一组对应的画。
+ *             桌面版每次进页面都从当前天色那一组里随机取一幅放在卡片里；
+ *             全屏时点一下画面就是看下一张，同一组里按顺序往下走，走到头绕回第一张；
  *             在画面上双击就直接退出来，不用去够左上角那两个按钮。
- *             再点「联想一下」（或「归位」/ Esc）也恢复原样。
+ *             再点「全屏显示」（或「归位」/ Esc）也恢复原样。
+ *             手机版（mobile.html）仍是旧结构：一个「进入画作模式」按钮，行为不变。
  *
  * 画作模式下「归位」只负责退出，不去动卡片位置（免得把摆好的版面弄乱）；
  * 点画面只换下一张，同样不碰卡片。
@@ -51,8 +54,8 @@
     phase = next;
     body.classList.toggle("bg-sun", next === "sun");
     body.classList.toggle("bg-moon", next === "moon");
-    // 正看着画的时候天色要是变了，就换一幅对得上天色的
-    if (muse) refreshPainting();
+    // 天色一变，画作跟着换：主页上换卡片里那幅，看画时换全屏那幅
+    refreshPainting();
     onIdle(function () {
       preload(next);
     });
@@ -134,7 +137,8 @@
     return next;
   }
 
-  /* 画某一幅、同时换掉右下角的署名。idx 是 GALLERY[name] 里的下标。 */
+  /* 画某一幅、同时换掉卡片里的画与署名、全屏右下角的署名。
+     idx 是 GALLERY[name] 里的下标。 */
   function showPainting(name, idx) {
     var list = GALLERY[name];
     if (!list || !list.length) return false;
@@ -144,10 +148,14 @@
     lastPick[name] = idx;
     var layer = name === "moon" ? el.paintMoon : el.paintSun;
     if (layer) layer.style.backgroundImage = 'url("' + item.file + '")';
+    if (el.frame) el.frame.style.backgroundImage = 'url("' + item.file + '")';
 
     // 用 textContent 写，别让画名里的符号有机会当 HTML 解析
     if (el.artTitle) el.artTitle.textContent = item.title;
     if (el.artArtist) el.artArtist.textContent = item.artist + " · " + item.year;
+    // 卡片里的介绍（桌面版）同源，手机上没有这两个元素，找不到就跳过
+    if (el.museTitle) el.museTitle.textContent = item.title;
+    if (el.museArtist) el.museArtist.textContent = item.artist + " · " + item.year;
 
     // 正在看画的时候顺手把下一张也取上，点一下换图不会先白一下。
     // 这纯属锦上添花，万一预取出岔子也不能影响「把画显示出来」这件事。
@@ -275,7 +283,12 @@
   function setMuse(on) {
     muse = !!on;
     if (!muse) cancelClick(); // 退出的时候，把那还没落地的一下单击丢掉
-    if (muse) refreshPainting(); // 每次进来都换一幅，换好了再淡入
+    // 全屏显示的是卡片里正在看的那一幅（桌面版预览和全屏同源）；
+    // 只有还没挑过画（理论上不会发生）才补挑一幅。
+    if (muse) {
+      var name = phase === "moon" ? "moon" : "sun";
+      if (lastPick[name] < 0) refreshPainting();
+    }
     body.classList.toggle("muse", muse);
     if (el.museBtn) el.museBtn.setAttribute("aria-pressed", muse ? "true" : "false");
     D.note("mood", { muse: muse, phase: phase });
@@ -283,6 +296,7 @@
 
   function syncMuseBtn() {
     if (el.museBtn) el.museBtn.hidden = !isHome();
+    if (el.nextBtn) el.nextBtn.hidden = !isHome();
   }
 
   /* 画作模式下「归位」只退出、不重置卡片：
@@ -331,13 +345,14 @@
   /* 画作模式下在画面上点：点一下看下一张，双击退出（判定见 onPaintingClick）。
      画作层和右下角署名都是 pointer-events: none 的装饰，点在画上时事件其实落在 body 上，
      所以这里不去绑画作层，而是在 document 上兜住这一下；
-     唯一要排除的是左上角那两个按钮（它们自己有活儿要干）。 */
+     唯一要排除的是左上角那两个按钮和卡片里的操作按钮（它们自己有活儿要干）。 */
   function paintingGestures() {
     document.addEventListener(
       "click",
       function (e) {
         if (!muse || !e.target) return;
         if (el.museBtn && el.museBtn.contains(e.target)) return;
+        if (el.nextBtn && el.nextBtn.contains(e.target)) return;
         if (el.resetBtn && el.resetBtn.contains(e.target)) return;
         if (typeof e.preventDefault === "function") e.preventDefault(); // 别让双击顺手选中文字
         onPaintingClick();
@@ -350,11 +365,15 @@
 
   function init() {
     el.museBtn = $("museBtn");
+    el.nextBtn = $("museNext");
     el.resetBtn = $("resetLayout");
     el.paintSun = document.querySelector(".painting-sun");
     el.paintMoon = document.querySelector(".painting-moon");
     el.artTitle = $("artTitle");
     el.artArtist = $("artArtist");
+    el.frame = $("museFrame");
+    el.museTitle = $("museTitle");
+    el.museArtist = $("museArtist");
 
     watchPhase();
     guardReset();
@@ -363,6 +382,13 @@
     if (el.museBtn) {
       el.museBtn.addEventListener("click", function () {
         setMuse(!muse);
+      });
+    }
+
+    // 「下一张」：顺序往下走，卡片里的画和全屏画共用同一份状态
+    if (el.nextBtn) {
+      el.nextBtn.addEventListener("click", function () {
+        nextPainting();
       });
     }
 
@@ -380,6 +406,7 @@
 
     syncMuseBtn();
     warmOnIntent();
+    // 首屏的画作由 watchPhase → paintPhase 铺好（天色切换也会自动换画）
     onIdle(function () {
       preload(phase);
     });

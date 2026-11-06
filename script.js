@@ -49,6 +49,7 @@
     var Mo = window.Mood || {};
     var C = window.CursorFX || {};
     var A = window.Avatar || {};
+    var Pt = window.Pet || {};
 
     /* ⓪ 路由：先按 hash 决定显示首页卡片还是某个独立页面（必须先跑，后面才拿得到正确尺寸） */
     safe("router", R.init);
@@ -74,6 +75,10 @@
     safe("cursorFx", C.init);
     /* ⑪ 数字分身：DeepSeek 大模型驱动的聊天卡片（界面自带欢迎语，不依赖网络也能渲染） */
     safe("avatar", A.init);
+    /* ⑫ 桌宠：Q 版小人（仅桌面版加载 js/pet.js；mobile 版不加载，这里就不启动，免得白报一个错） */
+    if (typeof Pt.init === "function") {
+      safe("pet", Pt.init);
+    }
 
     /* 页脚年份 */
     var y = document.getElementById("year");

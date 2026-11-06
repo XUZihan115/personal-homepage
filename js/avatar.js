@@ -18,12 +18,28 @@
 
   /* ================= 配置区 =================
      注意：前端直连意味着这个 key 会随代码公开（访客按 F12 就能看到），
-     风险上限 = 账户余额。策略：只充少量余额，交完作业后在
-     platform.deepseek.com 把这个 key 作废重建。 */
+     风险上限 = 账户余额。策略：只充少量余额，交完作业后把这些 key 作废重建。
+
+     双接入点：目前默认走火山方舟（provider: "ark"），DeepSeek 官方配置原样保留，
+     想换回 DeepSeek 时把 provider 改成 "deepseek" 即可，其它什么都不用动。
+     方舟那边的 model 用你在控制台开通的模型名或推理接入点 ID（ep-xxx），
+     不对的话改成你自己的。 */
   var CONFIG = {
-    model: "deepseek-flash", // DeepSeek 官方模型：DeepSeek-V4.1-Flash-1017
-    baseUrl: "https://api.deepseek.com/chat/completions",
-    apiKey: "DEEPSEEK_API_KEY_REVOKED",
+    provider: "ark", // 当前默认：火山方舟；换回 DeepSeek 官方 → "deepseek"
+    providers: {
+      ark: {
+        label: "火山方舟",
+        model: "deepseek-v4-1-flash-261017", // DeepSeek-V4.1-Flash（控制台已勾选开通）
+        baseUrl: "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+        apiKey: "ARK_API_KEY_REVOKED",
+      },
+      deepseek: {
+        label: "DeepSeek 官方",
+        model: "deepseek-flash", // DeepSeek 官方模型：DeepSeek-V4.1-Flash-1017
+        baseUrl: "https://api.deepseek.com/chat/completions",
+        apiKey: "DEEPSEEK_API_KEY_REVOKED",
+      },
+    },
     maxTokens: 2048,
     temperature: 0.8,
     maxHistory: 12, // 最多带上多少条历史消息（省 token）
@@ -88,23 +104,28 @@
     }
   }
 
+  function activeConfig() {
+    return CONFIG.providers[CONFIG.provider] || CONFIG.providers.ark;
+  }
+
   function ask(text) {
     history.push({ role: "user", content: text });
     // 只带上最近 maxHistory 条消息，控制每次请求的 token 消耗
     var windowed = history.slice(-CONFIG.maxHistory);
+    var cfg = activeConfig();
     var payload = {
-      model: CONFIG.model,
+      model: cfg.model,
       temperature: CONFIG.temperature,
       max_tokens: CONFIG.maxTokens,
       stream: false,
       messages: [{ role: "system", content: KNOWLEDGE }].concat(windowed),
     };
 
-    return fetch(CONFIG.baseUrl, {
+    return fetch(cfg.baseUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: "Bearer " + CONFIG.apiKey,
+        Authorization: "Bearer " + cfg.apiKey,
       },
       body: JSON.stringify(payload),
     }).then(function (res) {
@@ -166,8 +187,19 @@
     form.addEventListener("submit", onSend);
     say("bot", "你好呀，我是徐子涵主页上的数字分身。他做过什么、怎么想的、用的什么技术，都能问我。想聊点啥？");
     setBusy(false);
-    D.note("avatar", { ok: true, model: CONFIG.model, historyCap: CONFIG.maxHistory });
+    D.note("avatar", {
+      ok: true,
+      provider: CONFIG.provider,
+      model: activeConfig().model,
+      historyCap: CONFIG.maxHistory,
+    });
   }
 
-  window.Avatar = { init: init };
+  window.Avatar = {
+    init: init,
+    /* 供桌宠调用：在对话框里以分身身份说一句话 */
+    say: say,
+    /* 当前在用的接入点（含 label / model / baseUrl），诊断时看一眼 */
+    active: activeConfig,
+  };
 })();

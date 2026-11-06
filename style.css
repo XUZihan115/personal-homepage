@@ -253,11 +253,6 @@ body {
   height: 14px;
 }
 
-/* 左上角第二栏「联想一下」：紧贴在「归位」下方 */
-.corner-muse {
-  top: 57px;
-}
-
 /* ---------- 主题：整页跟着太阳 / 月亮走 ----------
    月亮 = 夜：整套深色，跟原来一模一样（:root 里那套默认值就是夜）。
    太阳 = 昼：蓝绿——淡青底、白卡片、青绿 / 天蓝的点缀，干净、青春、有阳光味。
@@ -670,7 +665,7 @@ body.muse .painting-credit {
   }
 }
 
-/* 画作模式：主页上除「归位」「联想一下」以外的都收起来 */
+/* 画作模式：主页上除左上角「归位」以外的都收起来 */
 body.muse .topbar,
 body.muse .stage,
 body.muse .hintbar {
@@ -681,11 +676,6 @@ body.muse .corner-reset {
   background: rgba(12, 12, 16, 0.72);
   border-color: rgba(255, 255, 255, 0.2);
   color: var(--text);
-}
-
-body.muse .corner-muse {
-  color: var(--amber);
-  border-color: rgba(255, 199, 107, 0.44);
 }
 
 /* ---------- 舞台与卡片 ---------- */
@@ -782,12 +772,13 @@ body.muse .corner-muse {
 }
 
 /* ---------- ① 自我介绍 ---------- */
-/* 初始布局：三列紧凑排布，整体在舞台里居中
-   （列宽 400 / 362 / 340，列间距 22px → 总宽 1146px，半宽 573px）
+/* 初始布局：三列网格，整体在舞台里居中
+   （列宽 400 / 362 / 340，列间距 40px → 总宽 1182px，半宽 591px）
+   行 1 三张卡顶部对齐，行 3 三张卡底部对齐，中列三张垂直分布、中间的技能居中。
    卡片被拖走后，点左上角「归位」即可回到这套位置。 */
 .card-intro {
-  left: calc(50% - 573px);
-  top: 9%;
+  left: calc(50% - 591px);
+  top: 28px;
   width: 400px;
   padding: 22px 24px 20px;
 }
@@ -903,7 +894,7 @@ body.muse .corner-muse {
 /* ---------- ② 七段数码管时钟 ---------- */
 .card-clock {
   left: calc(50% - 151px);
-  top: 9%;
+  top: 28px;
   width: 362px;
 }
 
@@ -1019,8 +1010,8 @@ body.muse .corner-muse {
 
 /* ---------- ③ 太阳 / 月亮 ---------- */
 .card-celestial {
-  left: calc(50% + 233px);
-  top: 7%;
+  left: calc(50% + 251px);
+  top: 28px;
   width: 340px;
   overflow: hidden;
 }
@@ -1086,10 +1077,146 @@ body.muse .corner-muse {
   color: var(--muted);
 }
 
-/* ---------- ④ 技能标签 ---------- */
+/* ---------- ④ 联想一下（画作画廊卡片，行 3 右列，底部与经历、终端对齐） ---------- */
+.card-muse {
+  left: calc(50% + 251px);
+  top: 360px;
+  width: 340px;
+}
+
+/* 卡片内：画作尽量大（16:9 满宽）+ 介绍 + 两个操作按钮。
+   旧版「muse-desc / muse-btn（进入画作模式）」样式保留在下方，
+   手机上（mobile.html 仍是旧结构）继续用。 */
+.muse-frame {
+  border-radius: 10px;
+  aspect-ratio: 16 / 9;
+  background: #0e0e13 center / cover no-repeat;
+  border: 1px solid rgba(127, 182, 255, 0.16);
+}
+
+.muse-cap {
+  margin-top: 7px;
+}
+
+.muse-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.muse-artist {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.muse-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.muse-act {
+  flex: 1;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: #dbe8ff;
+  background: rgba(127, 182, 255, 0.12);
+  border: 1px solid rgba(127, 182, 255, 0.35);
+  border-radius: 11px;
+  cursor: pointer;
+  transition: transform 0.18s, background 0.18s, border-color 0.18s;
+}
+
+.muse-act:hover {
+  transform: translateY(-1px);
+  color: #eaf2ff;
+  background: rgba(127, 182, 255, 0.2);
+  border-color: rgba(127, 182, 255, 0.5);
+}
+
+.muse-act.muse-full {
+  background: rgba(127, 182, 255, 0.2);
+  border-color: rgba(127, 182, 255, 0.5);
+}
+
+body.bg-sun .muse-act {
+  color: #04302e;
+  background: rgba(13, 148, 136, 0.1);
+  border-color: rgba(13, 148, 136, 0.35);
+}
+
+body.bg-sun .muse-act:hover {
+  background: rgba(13, 148, 136, 0.18);
+}
+
+/* 全屏操作提示：按钮下面一行小字，告诉访客怎么退出 / 换画 */
+.muse-hint {
+  margin: 6px 0 0;
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--muted);
+  text-align: center;
+}
+
+.muse-desc {
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--muted);
+  margin-bottom: 13px;
+}
+
+.muse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 14px;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: #dbe8ff;
+  background: rgba(127, 182, 255, 0.12);
+  border: 1px solid rgba(127, 182, 255, 0.35);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.18s, background 0.18s, border-color 0.18s;
+}
+
+.muse-btn svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.muse-btn:hover {
+  transform: translateY(-1px);
+  color: #eaf2ff;
+  background: rgba(127, 182, 255, 0.2);
+  border-color: rgba(127, 182, 255, 0.5);
+}
+
+body.bg-sun .muse-btn {
+  color: #04302e;
+  background: rgba(13, 148, 136, 0.1);
+  border-color: rgba(13, 148, 136, 0.35);
+}
+
+body.bg-sun .muse-btn:hover {
+  background: rgba(13, 148, 136, 0.18);
+}
+
+/* ---------- ⑤ 技能标签（中列：时钟下方、终端上方，水平和垂直都居中） ---------- */
 .card-skills {
-  left: calc(50% + 233px);
-  top: 53%;
+  left: calc(50% - 140px);
+  top: 278px;
   width: 340px;
 }
 
@@ -1122,10 +1249,10 @@ body.muse .corner-muse {
   background: rgba(127, 182, 255, 0.09);
 }
 
-/* ---------- ⑤ 经历 ---------- */
+/* ---------- ⑥ 经历（行 3 左列，底部与终端、联想一下对齐） ---------- */
 .card-exp {
-  left: calc(50% - 573px);
-  top: 64%;
+  left: calc(50% - 591px);
+  top: 474px;
   width: 400px;
 }
 
@@ -1180,10 +1307,10 @@ body.muse .corner-muse {
   margin-top: 3px;
 }
 
-/* ---------- ⑥ 终端卡片 ---------- */
+/* ---------- ⑦ 终端卡片（行 3 中列，底部与经历、联想一下对齐） ---------- */
 .card-term {
   left: calc(50% - 151px);
-  top: 42%;
+  top: 539px;
   width: 362px;
   padding: 0;
   overflow: hidden;
@@ -1263,18 +1390,35 @@ body.muse .corner-muse {
 /* ---------- 数字分身页面：聊天界面 ---------- */
 /* 分身不再是一张可拖拽的卡片，而是顶部导航里的独立页面（#/avatar）。
    下面这段只调页面里的布局；.chat / .chat-bubble / .chat-form 等样式
-   从原卡片原样搬过来共用，见下方「聊天界面」各规则。 */
+   从原卡片原样搬过来共用，见下方「聊天界面」各规则。
+
+   布局按设计截图调整过：
+   - 回复区域左右空间多用一点（对话区占满页面宽度，气泡更宽）；
+   - 对话框贴到页面最下方（红框标注的位置），像聊天 App 一样固定在底部，
+     上面让位给对话区，对话区自己滚动。 */
 .page-avatar {
-  max-width: 560px; /* 页面区本身 880px 宽，聊天收窄一点更像对话框 */
+  max-width: 780px; /* 880 的页面区里把聊天做宽，左右空间多用一点 */
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 150px); /* 撑到视口高度，让输入框能贴到底部 */
+  padding-bottom: 132px; /* 给 fixed 的输入框 + 底部两个按钮让位，滚动时内容不被盖住 */
+}
+
+.page-avatar .page-body {
+  flex: none;
 }
 
 .page-avatar .chat {
-  height: 330px; /* 页面里地方比卡片大，对话区高一点 */
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 180px;
+  max-height: 52vh;
+  margin-bottom: 0; /* 底部让位给固定的输入框 */
 }
 
+/* 聊天区基础规则（数字分身页和原卡片共用） */
 .chat {
-  height: 264px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -1282,6 +1426,41 @@ body.muse .corner-muse {
   margin-bottom: 11px;
   padding-right: 3px;
   scrollbar-width: thin;
+}
+
+.page-avatar .chat-form {
+  flex: none;
+  /* 输入框固定在视口底部偏上：下边给「回首页/找本人」两个按钮让位，
+     滚动内容时它始终贴在这一高度，和引导条 .ask-guide 同一个做法：
+     fixed + 水平居中 + 跟页面同宽 */
+  position: fixed;
+  left: 50%;
+  bottom: 70px;
+  transform: translateX(-50%);
+  z-index: 15;
+  width: min(780px, calc(100vw - 44px));
+  box-sizing: border-box;
+  padding: 10px 12px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* 数字分身页底部的「回首页 / 找本人」两个按钮：
+   放在输入框下面、贴视口底部（输入框 bottom:70px 就是给它们让位） */
+.page-avatar .page-foot {
+  flex: none;
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 14;
+  margin: 0;
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
 }
 
 .chat-msg {
@@ -1298,7 +1477,7 @@ body.muse .corner-muse {
 }
 
 .chat-bubble {
-  max-width: 86%;
+  max-width: 92%; /* 回复区左右空间多用一点（设计截图 u3 标注） */
   font-size: 12.5px;
   line-height: 1.55;
   padding: 7px 11px;
@@ -1325,6 +1504,28 @@ body.muse .corner-muse {
   background: rgba(224, 108, 98, 0.09);
   border-color: rgba(224, 108, 98, 0.3);
   color: #e6cfcc;
+}
+
+/* 昼 · 蓝绿：白卡片底下气泡是浅的，文字要跟着背景反色才看得清 */
+body.bg-sun .chat-msg.bot .chat-bubble {
+  background: rgba(13, 148, 136, 0.08);
+  border-color: rgba(13, 148, 136, 0.22);
+  color: #0d3b3a;
+}
+
+body.bg-sun .chat-msg.me .chat-bubble {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.26);
+  color: #7c520f;
+}
+
+body.bg-sun .chat-msg.err .chat-bubble {
+  background: rgba(224, 108, 98, 0.07);
+  color: #8a3228;
+}
+
+body.bg-sun .chat-msg.typing i {
+  background: #0d9488;
 }
 
 /* 输入中的三个小点 */
@@ -1398,6 +1599,11 @@ body.muse .corner-muse {
   opacity: 0.55;
 }
 
+/* 昼 · 蓝绿：输入框文字和 AI 回复文本同色 */
+body.bg-sun .chat-input {
+  color: #0d3b3a;
+}
+
 .chat-send {
   flex: none;
   font-size: 12px;
@@ -1422,6 +1628,90 @@ body.muse .corner-muse {
   filter: grayscale(0.6);
   opacity: 0.6;
   cursor: default;
+}
+
+/* ---------- 桌宠（桌面版专属，见 js/pet.js） ----------
+   固定在视口上，浮在页面内容之上、导航之下：
+   - 本体是可拖的 Q 版小人，位置由 js 直接写 left/top
+   - 气泡跟在头顶，动画淡入淡出
+   - 只有待机正面图（不做走路/跑步/拖拽动画，见 js/pet.js 说明） */
+.pet {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 600; /* 压在 .pages(10) 和 .stage 之上，但比 .topbar(900) 低，不会盖住导航 */
+  width: 84px;
+  height: 126px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pet.dragging {
+  cursor: grabbing;
+}
+
+.pet-face {
+  width: 84px;
+  height: 126px;
+  transform-origin: center bottom;
+  transition: transform 0.22s ease;
+}
+
+.pet-f-left .pet-face {
+  transform: scaleX(-1);
+}
+
+.pet-body {
+  width: 84px;
+  height: 126px;
+  display: block;
+  pointer-events: none;
+}
+
+.pet-bubble {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%) translateY(6px);
+  max-width: 190px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #eef1f7;
+  background: rgba(24, 26, 34, 0.92);
+  border: 1px solid rgba(127, 182, 255, 0.28);
+  border-radius: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.pet-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 8px;
+  height: 8px;
+  background: inherit;
+  border-right: 1px solid rgba(127, 182, 255, 0.28);
+  border-bottom: 1px solid rgba(127, 182, 255, 0.28);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.pet-bubble.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* 减少动态效果：桌宠不做走路/跑步动画，只保留气泡淡入淡出 */
+@media (prefers-reduced-motion: reduce) {
+  .pet-bubble {
+    transition: opacity 0.2s ease;
+  }
 }
 
 /* ---------- ⑦ 引导条：把想提意见的人指到留言页 ---------- */
@@ -1548,17 +1838,29 @@ body.muse .corner-muse {
 @media (max-width: 1180px) {
   .card-intro,
   .card-exp {
-    left: calc(50% - 513px);
+    left: calc(50% - 535px);
     width: 340px;
   }
-  .card-clock,
+  /* 窄屏里自我介绍在 340px 宽下会变高，经历卡要往下让一让才不压住它 */
+  .card-exp {
+    top: 494px;
+  }
+  /* 窄屏三列也保持行 3 底部对齐（经历 494 + 高 256 → 底 819） */
   .card-term {
-    left: calc(50% - 155px);
+    top: 579px;
+  }
+  .card-muse {
+    top: 418px;
+  }
+  .card-clock,
+  .card-skills,
+  .card-term {
+    left: calc(50% - 170px);
     width: 340px;
   }
   .card-celestial,
-  .card-skills {
-    left: calc(50% + 203px);
+  .card-muse {
+    left: calc(50% + 210px);
     width: 310px;
   }
   /* 引导条是 fixed 的，宽度靠 min() 自己收，不跟着列宽走，这里不用再覆盖 */
@@ -1599,6 +1901,9 @@ body.muse .corner-muse {
   .card-term {
     order: 6;
   }
+  .card-muse {
+    order: 7;
+  }
   /* 手机上它照样 fixed 在页面最下面正中间，不再排进单列文档流里。
      宽度由 min(362px, 100vw - 28px) 收窄，两边各留 14px。 */
   .name-row {
@@ -1621,9 +1926,6 @@ body.muse .corner-muse {
   }
   .corner-reset-text {
     display: none;
-  }
-  .corner-muse {
-    top: 52px;
   }
 }
 
@@ -1655,7 +1957,10 @@ body.muse .corner-muse {
 }
 
 .page {
-  animation: pageIn 0.34s ease both;
+  /* backwards 而不是 both：动画结束后不留 transform 残留。
+     残留的 transform（哪怕单位矩阵）会让内部 fixed 元素（聊天输入框）
+     把 .page 当成包含块，导致贴底定位错位。 */
+  animation: pageIn 0.34s ease backwards;
 }
 
 @keyframes pageIn {
