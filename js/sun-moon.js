@@ -3,11 +3,12 @@
  * 两颗星球的表面：
  *   月亮 = NASA LRO 月球反照率图（等距圆柱 2048×1024），
  *          凹凸由反照率亮度现场派生（亮的高地 = 高，暗的月海 = 低）。
- *   太阳 = NASA SDO AIA 171Å 日面观测（assets/sun-sdo-171.jpg）：现场把正射圆盘图
- *          重投影成等距圆柱贴图（makeSunSdoMap）——正面半球直接采样真实观测的
- *          米粒、活动区、冕洞，背面半球用日面边缘色平滑过渡（不镜像，无重复
- *          亮斑、无竖缝）。着色器按 SDO 实测较差自转律在贴图上差速采样（赤道
- *          快、极区慢）。观测图拿不到（file:// 直开 / 断网）时退回程序化日面。
+ *   太阳 = 完整球面贴图（assets/sun-sdo-171-sphere.jpg，2048×1024 等距圆柱）：
+ *          正面半球是 NASA SDO AIA 171Å 真实观测（米粒、活动区、冕洞原样保留），
+ *          背面半球离线按真实日面的统计特征程序化合成 171Å 等离子纹理（颜色
+ *          直方图匹配、无镜像无重复），临边 ±20° 过渡带混合——转到任何角度
+ *          都是「真实日面」。着色器按 SDO 实测较差自转律在贴图上差速采样（赤道
+ *          快、极区慢）。球面贴图拿不到（file:// 直开 / 断网）时退回程序化日面。
  * 着色器再按视角算一遍真实的临边昏暗 I(μ) = 1 - u(1-μ) - v(1-μ)²。
  * 外层加一圈很弱的日冕光晕，太阳表面贴着「日珥」弧环并偶尔抛射粒子。
  * 月亮贴图只走相对路径 textures/*.jpg；拿不到（比如 file:// 打开）时
@@ -349,13 +350,17 @@
   /* ============================================================
      太阳贴图（兜底）：CPU 预生成（球面 Voronoi 米粒组织 + 黑子）
      ============================================================
-     主贴图现在是 NASA SDO AIA 171Å 真实观测（见 makeSunSdoMap），这张
-     程序化贴图只在观测图拿不到时兜底（file:// 直开 / 跨域 / 断网）。
+     主贴图现在是 NASA SDO AIA 171Å 球面贴图（正面真实观测 + 背面合成，
+     见 assets/sun-sdo-171-sphere.jpg，由 .deepworks/tmp/build-sun-sphere.js 烘焙），这张
+     程序化贴图只在球面贴图拿不到时兜底（file:// 直开 / 跨域 / 断网）。
 
      历史踩坑记在这里：早先直接把 SDO 圆盘图当球体贴图，单张圆盘只覆盖
      约 180°，背面靠镜像拼 —— 左右重复亮斑 + 中间竖缝，米粒被反演抹平，
-     整颗球是「橙色塑料球」。现在的正确做法是先把圆盘重投影成等距圆柱
-     贴图（正面采样、背面边缘色过渡），从根上避开镜像问题。
+     整颗球是「橙色塑料球」；后来改成「正面重投影 + 背面边缘色过渡」，
+     转起来背面是一片平坦渐变，仍然穿帮。现在的正确做法是离线烘焙完整
+     球面贴图：正面采样真实观测、背面按真实日面的统计特征程序化合成
+     171Å 纹理（颜色直方图匹配、无镜像无重复、临边过渡带混合），从根上
+     避开镜像与穿帮问题。
 
      程序化版本身（兜底用）：
        · 全程在球面上算，经度方向天然无缝，两极也不会被挤压变形；
@@ -546,129 +551,6 @@
     return c;
   }
 
-  /* ============================================================
-     太阳贴图（主）：NASA SDO AIA 171Å 正射圆盘 -> 等距圆柱重投影
-     ============================================================
-     SDO 拍到的是太阳球面在望远镜下的正射投影（圆盘，约 180° 半球）。
-     直接拿圆盘图当球体贴图：转过 90° 就是黑的/错位的，背面镜像又出
-     重复亮斑。正确做法是把圆盘逐像素「贴回球面」再展开成等距圆柱：
-       · 正面半球（朝向 SDO 的那面）：直接采样圆盘对应位置，米粒、活动区、
-         冕洞、黑子原样保留（圆盘外的黑背景不采样，取日面边缘色淡出）；
-       · 背面半球：太阳没有暗面，用日面边缘亮色向外平滑过渡（只轻微变暗
-         8%），不产生任何重复结构；自转起来后细节从一侧转出、另一侧转进。
-     输出 1024×512，经度方向首尾无缝。CPU 一次性开销约几十毫秒。
-     ============================================================ */
-  function makeSunSdoMap(img) {
-    var W = 1024;
-    var H = 512;
-
-    // 观测图先画进离屏 canvas
-    var src = document.createElement("canvas");
-    src.width = img.naturalWidth || img.width || 1024;
-    src.height = img.naturalHeight || img.height || 1024;
-    var sg = src.getContext("2d");
-    sg.drawImage(img, 0, 0);
-
-    // NASA 正射图：日面居中，直径撑满短边
-    var sw = src.width;
-    var sh = src.height;
-    var cx = sw / 2;
-    var cy = sh / 2;
-    var R = Math.min(sw, sh) / 2;
-    var srcData = sg.getImageData(0, 0, sw, sh).data;
-
-    // 双线性采样圆盘图；越界返回 null
-    function sampleAt(sx, sy) {
-      var x = sx - 0.5;
-      var y = sy - 0.5;
-      if (x < 0 || y < 0 || x > sw - 1 || y > sh - 1) return null;
-      var x0 = Math.floor(x);
-      var y0 = Math.floor(y);
-      var x1 = Math.min(sw - 1, x0 + 1);
-      var y1 = Math.min(sh - 1, y0 + 1);
-      var fx = x - x0;
-      var fy = y - y0;
-      var o00 = (y0 * sw + x0) * 4;
-      var o10 = (y0 * sw + x1) * 4;
-      var o01 = (y1 * sw + x0) * 4;
-      var o11 = (y1 * sw + x1) * 4;
-      var wx = 1 - fx;
-      var wy = 1 - fy;
-      return [
-        srcData[o00] * wx * wy + srcData[o10] * fx * wy + srcData[o01] * wx * fy + srcData[o11] * fx * fy,
-        srcData[o00 + 1] * wx * wy + srcData[o10 + 1] * fx * wy + srcData[o01 + 1] * wx * fy + srcData[o11 + 1] * fx * fy,
-        srcData[o00 + 2] * wx * wy + srcData[o10 + 2] * fx * wy + srcData[o01 + 2] * wx * fy + srcData[o11 + 2] * fx * fy,
-      ];
-    }
-
-    // 日面边缘亮色（东/西各取一个取平均，背面过渡用）
-    function edgeColor() {
-      var e = sampleAt(cx + R, cy);
-      var w = sampleAt(cx - R, cy);
-      var cand = [];
-      if (e) cand.push(e);
-      if (w) cand.push(w);
-      if (!cand.length) return [255, 170, 90];
-      var r = 0;
-      var g = 0;
-      var b = 0;
-      for (var i = 0; i < cand.length; i++) {
-        r += cand[i][0];
-        g += cand[i][1];
-        b += cand[i][2];
-      }
-      return [r / cand.length, g / cand.length, b / cand.length];
-    }
-    var edge = edgeColor();
-
-    var out = document.createElement("canvas");
-    out.width = W;
-    out.height = H;
-    var g = out.getContext("2d");
-    var imgd = g.createImageData(W, H);
-    var d = imgd.data;
-
-    for (var y = 0; y < H; y++) {
-      var v = (y + 0.5) / H;
-      var lat = Math.PI * (0.5 - v); // +π/2 北极
-      var sinLat = Math.sin(lat);
-      var cosLat = Math.cos(lat);
-      for (var x = 0; x < W; x++) {
-        var u = (x + 0.5) / W;
-        var lon = u * Math.PI * 2 - Math.PI; // -π..π，0 正对 SDO
-        var z = cosLat * Math.cos(lon);
-        var r;
-        var gg;
-        var bb;
-        if (z > 0) {
-          var c = sampleAt(cx + R * cosLat * Math.sin(lon), cy - R * sinLat);
-          if (c) {
-            r = c[0];
-            gg = c[1];
-            bb = c[2];
-          } else {
-            // 圆盘外的角落（极区边缘拉出圆盘）：日面边缘色
-            r = edge[0];
-            gg = edge[1];
-            bb = edge[2];
-          }
-        } else {
-          // 背面：边缘色轻微变暗地过渡，无重复结构
-          var dim = 1 - 0.08 * Math.min(1, -z * 1.2);
-          r = edge[0] * dim;
-          gg = edge[1] * dim;
-          bb = edge[2] * dim;
-        }
-        var o = (y * W + x) * 4;
-        d[o] = r;
-        d[o + 1] = gg;
-        d[o + 2] = bb;
-        d[o + 3] = 255;
-      }
-    }
-    g.putImageData(imgd, 0, 0);
-    return out;
-  }
 
   /* 日冕 / 光晕贴图 */
   function glowTexture(stops) {
@@ -905,22 +787,23 @@
       D.note("celestial", { sunTex: "procedural-default" });
     }
 
-    // 真实日面：加载 NASA SDO AIA 171Å 观测图，现场重投影成等距圆柱贴图。
+    // 真实日面：加载完整球面贴图（正面 SDO 观测 + 背面程序化合成，2048×1024，
+    // 离线烘焙好，浏览器直接贴球，不做任何重投影）。
     // 拿不到（file:// 直开 / 跨域 / 断网）就保持上面的程序化日面，页面依然完整。
     function applySunSdo(tex) {
-      var map = makeSunSdoMap(tex.image); // Texture 对象取 .image 才是 HTMLImageElement
-      var tex = new THREE.CanvasTexture(map);
+      // Texture 对象取 .image 才是 HTMLImageElement；烘焙好的等距圆柱直接当球体贴图
       tex.wrapS = THREE.RepeatWrapping;
       tex.wrapT = THREE.ClampToEdgeWrapping;
-      tex.minFilter = THREE.LinearFilter;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
       tex.magFilter = THREE.LinearFilter;
       if (tex.anisotropy !== undefined) tex.anisotropy = 4;
+      tex.needsUpdate = true;
       sunMat.uniforms.uAlbedo.value = tex;
       sunMat.uniforms.uUseTex.value = 1;
-      D.note("celestial", { sunTex: "sdo-171", sdoW: map.width, sdoH: map.height });
+      D.note("celestial", { sunTex: "sdo-sphere", sdoW: tex.image.width, sdoH: tex.image.height });
     }
-    loadTexture("assets/sun-sdo-171.jpg", applySunSdo, function () {
-      // SDO 观测图没拿到：程序化日面继续顶上
+    loadTexture("assets/sun-sdo-171-sphere.jpg", applySunSdo, function () {
+      // 球面贴图没拿到：程序化日面继续顶上
       D.note("celestial", { sunTex: "procedural-fallback" });
     });
     var sunMesh = new THREE.Mesh(new THREE.SphereGeometry(R, 64, 48), sunMat);
@@ -1369,7 +1252,7 @@
       body: body,
       bumps: moonMat.uniforms.uBump.value,
       moonMap: "1024x512",
-      textures: "textures/ (NASA LRO) + SDO 171Å 日面（重投影）",
+      textures: "textures/ (NASA LRO) + SDO 171Å 球面贴图（正面观测+背面合成）",
     });
   }
 
