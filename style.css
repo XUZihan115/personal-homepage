@@ -1369,10 +1369,10 @@ body.bg-sun .tag.is-open {
   width: auto;
 }
 
-/* ---------- ⑥ 经历（行 3 左列，底部与终端、联想一下对齐） ---------- */
+/* ---------- ⑥ 经历（行 3 左列，紧跟自我介绍卡片，底部与终端、联想一下对齐） ---------- */
 .card-exp {
   left: calc(50% - 591px);
-  top: 474px;
+  top: 305px;
   width: 400px;
 }
 
@@ -1380,11 +1380,11 @@ body.bg-sun .tag.is-open {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 22px;
 }
 
 .timeline li {
-  padding-left: 15px;
+  padding: 5px 0 5px 15px;
   border-left: 1px solid var(--line-strong);
   position: relative;
 }

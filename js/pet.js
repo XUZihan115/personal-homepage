@@ -46,8 +46,8 @@
   var running = false; // 正在跑向锚点
   var anchored = false; // 已站在数字分身锚点
   var pageName = "home"; // 当前路由名，决定说什么话
-  var tourIndex = 0; // 当前页功能导览说到第几句
-  var tourTimer = null; // 功能导览的下一条定时器
+  var tourDone = false; // 本页的整段导览是否已经说过（每页只说一次）
+  var tourTimer = null; // 功能导览的定时器
   var vw = 0;
   var vh = 0;
 
@@ -128,77 +128,50 @@
     return lines[Math.floor(Math.random() * lines.length)];
   }
 
-  /* 非数字分身页的「功能导览」：
-     每个页面一套句子，按顺序轮着说，指出哪里能玩、点哪里。 */
+  /* 非数字分身页的「页面导览」：
+     每个页面一整段话，概括这一页有什么，进页面就说，说完就停。 */
   var TOUR = {
     home: IS_MOBILE
       ? [
-          "这一页是我的名片，从上往下滑就能看全。",
-          "卡片一张接一张：时钟、介绍、技能、经历、日月、画廊。",
-          "点月亮能变成太阳，整页配色跟着换。",
-          "技能胶囊点一下，会弹出它是什么、能干什么。",
-          "「联想一下」点「进入画作模式」就能看画，点一下换一张。",
-          "名字是逐笔写出来的，写完会再写一遍。",
-          "留言板留一句，点开这个链接的人都能看到。",
+          "这一页是我的名片，从上往下滑：问候、时钟、技能、经历、日月、画廊和联系方式都在。",
         ]
       : [
-          "这一页是我的名片：六张卡片，摆成三列。",
-          "卡片都能拖，位置我记得住；左上角「归位」一键摆回去。",
-          "点月亮能变成太阳，整页配色跟着换。",
-          "技能胶囊点一下，会弹出它是什么、能干什么。",
-          "「联想一下」里能看画，还能全屏。",
-          "名字是逐笔写出来的，写完会再写一遍。",
-          "想聊两句？点顶部「数字分身」找我。",
+          "这一页是我的名片：问候、时钟、技能、经历、日月、画廊和联系方式，卡片都能拖着换位置。",
         ],
     detail: [
-      "这一页写的是我：大一，智能医学工程。",
-      "学校、专业、年级这些基本信息都在下面。",
-      "编程、乒乓球、数学建模——我平时主要折腾这三件事。",
+      "这一页写我：智能医学工程大一，做 Web 和 AI 原生开发；爱好编程、乒乓球、数学建模，最下面是基本信息。",
     ],
     projects: [
-      "这一页是我做过的东西，前几个能直接上手试。",
-      "BMI、温度换算、进制转换，输了数就有结果。",
-      "「看技术细节」里写了这个主页每一块是怎么做的。",
-      "课程表这些成品，点「打开看看」能跳过去。",
+      "这一页是我做过的东西：BMI、温度、进制、斐波那契能直接试，还有班级课程表和这个主页的技术细节。",
     ],
     guestbook: [
-      "这一页是留言板，公开的，点开链接的人都能看到。",
-      "昵称可以空着，会显示「匿名」。",
-      "连的是 Supabase，断网时先存在你自己的浏览器里。",
+      "这一页是公开留言板：昵称可以空着，写一句点开链接的人都能看到，断网时先存在你自己的浏览器里。",
     ],
     contact: [
-      "这一页是我的联系方式：邮箱、QQ、学校。",
-      "想聊直接发邮件，或者加 QQ。",
-      "下面那只猫，是从木箱缝里探头的。",
+      "这一页是我的联系方式：邮箱、QQ、学校；想聊直接发邮件或加 QQ，下面那只猫是从木箱缝里探头的。",
     ],
   };
 
-  var TOUR_GAP_MIN = 6500; // 两句之间最短隔多久
-  var TOUR_GAP_MAX = 10000;
+  var TOUR_DELAY = 400; // 进页面后多久开口（等卡片淡入）
+  var TOUR_DURATION = 6200; // 一整段话在气泡里停留多久
 
   function tourLines() {
     return TOUR[pageName] || TOUR.home;
   }
 
-  /* 按顺序取下一句，说完一轮再从头开始 */
-  function nextTourLine() {
-    var lines = tourLines();
-    var line = lines[tourIndex % lines.length];
-    tourIndex++;
-    return line;
-  }
-
-  /* 非数字分身页：进页面 2.6 秒先说第一句，之后每 6.5~10 秒说下一句 */
+  /* 非数字分身页：进页面 0.4 秒说一段整页总结，说完就停，本页不再重复。
+     正在拖动或跑动时先让一让，等手上的动作结束再开口。 */
   function scheduleTour() {
     clearTimeout(tourTimer);
-    if (pageName === "avatar") return;
-    var delay = tourIndex === 0
-      ? 2600
-      : TOUR_GAP_MIN + Math.random() * (TOUR_GAP_MAX - TOUR_GAP_MIN);
+    if (pageName === "avatar" || tourDone) return;
     tourTimer = setTimeout(function () {
-      if (!running && mode !== "dragging") speak(nextTourLine(), 4600);
-      scheduleTour();
-    }, delay);
+      if (running || mode === "dragging") {
+        scheduleTour();
+        return;
+      }
+      tourDone = true;
+      speak(tourLines()[0], TOUR_DURATION);
+    }, TOUR_DELAY);
   }
 
   /* 数字分身页：偶尔冒一句闲聊，别打扰聊天 */
@@ -253,7 +226,8 @@
       pet.removeEventListener("pointermove", move);
       pet.removeEventListener("pointerup", up);
       pet.removeEventListener("pointercancel", up);
-      scheduleIdle();
+      if (pageName === "avatar") scheduleIdle();
+      else scheduleTour();
     }
 
     pet.addEventListener("pointermove", move);
@@ -368,7 +342,7 @@
          其他页面之间切换时位置原地不动，用户摆哪儿就留在哪儿。 */
       runToCorner();
     }
-    tourIndex = 0; // 每到一个页面，导览从第一句重新说
+    tourDone = false; // 每到一个页面，重新说一次这一页的总结
     if (name === "avatar") {
       if (!IS_MOBILE) scheduleIdle();
     } else {
@@ -438,8 +412,7 @@
       D.note("pet", { ok: false, error: "没有 Router，桌宠无法挂钩路由" });
     }
 
-    // 开场打声招呼（手机版在数字分身页不出现，就别冒泡）
-    if (!(IS_MOBILE && pageName === "avatar")) speak("嗨，我在这~", 2400);
+    // 非数字分身页不再单独打招呼：落地 0.4 秒后直接说这一页的整段总结
     if (pageName === "avatar") {
       if (!IS_MOBILE) scheduleIdle();
     } else {
