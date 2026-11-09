@@ -294,5 +294,9 @@
     D.note("pet", { ok: true, pos: [Math.round(pos.x), Math.round(pos.y)] });
   }
 
-  window.Pet = { init: init };
+  window.Pet = {
+    init: init,
+    /* 对外暴露说话气泡：数字分身等模块可在事件发生时让桌宠冒一句 */
+    speak: speak,
+  };
 })();

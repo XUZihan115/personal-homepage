@@ -1,14 +1,16 @@
 /* js/avatar.js —— 数字分身（独立页面 #/avatar，不再是主页上的卡片）
  *
- * 做法：前端直连 DeepSeek API（OpenAI 兼容格式），浏览器直接 fetch。
+ * 做法：前端先请求腾讯云 SCF 代理（scf-ark-proxy，见 docs/scf-ark-proxy-deploy.md），
+ * 代理再转发火山方舟 OpenAI 兼容接口。API Key 只存在云函数环境变量里，
+ * 前端源码不再携带任何密钥。
  * 数字分身的全部秘密都在下面这份 KNOWLEDGE 里：系统提示词 + 四份知识库，
  * 每次提问时作为 system 消息发给模型 —— 不是微调，是「资料 + 提示词 + 边界规则」。
  *
  * 期末报告素材：
- *   - 模型厂商：DeepSeek（深度求索）
- *   - 模型型号：deepseek-flash（DeepSeek-V4.1-Flash-1017）
- *   - 接口：https://api.deepseek.com/chat/completions（OpenAI 兼容格式）
- *   - 接入方式：前端直连（浏览器 fetch，DeepSeek 服务端支持 CORS，已实测预检通过）
+ *   - 模型厂商：火山方舟（火山引擎）承载 DeepSeek-V4.1-Flash
+ *   - 模型型号：deepseek-v4-1-flash-261017（控制台开通）
+ *   - 接口：腾讯云 SCF Web 函数代理 → https://ark.cn-beijing.volces.com/api/v3/chat/completions
+ *   - 接入方式：前端 → 云函数代理（免费额度 100万次调用/月）→ 方舟
  *   - 知识库：与 ai/ 目录同步，改动资料时两处都要改，以 ai/ 为基准
  */
 (function () {
@@ -17,27 +19,27 @@
   var D = window.__DIAG || { note: function () {}, err: function () {} };
 
   /* ================= 配置区 =================
-     注意：前端直连意味着这个 key 会随代码公开（访客按 F12 就能看到），
-     风险上限 = 账户余额。策略：只充少量余额，交完作业后把这些 key 作废重建。
+     注意：密钥已全部迁到腾讯云 SCF 代理的环境变量（ARK_API_KEY），
+     前端这里不再放任何 key；baseUrl 指向部署好的代理地址。
 
-     双接入点：目前默认走火山方舟（provider: "ark"），DeepSeek 官方配置原样保留，
-     想换回 DeepSeek 时把 provider 改成 "deepseek" 即可，其它什么都不用动。
-     方舟那边的 model 用你在控制台开通的模型名或推理接入点 ID（ep-xxx），
-     不对的话改成你自己的。 */
+     双接入点：默认走火山方舟（provider: "ark"），DeepSeek 官方配置原样保留，
+     想换回 DeepSeek 时把 provider 改成 "deepseek" 即可（若保留官方 key 的话）。
+     方舟那边用哪个模型由代理环境变量 ARK_MODELS 决定（逗号分隔，额度用完自动切下一个），
+     前端传的 model 只在列表内时作为起始模型，保留仅作兼容。 */
   var CONFIG = {
     provider: "ark", // 当前默认：火山方舟；换回 DeepSeek 官方 → "deepseek"
     providers: {
       ark: {
         label: "火山方舟",
-        model: "deepseek-v4-1-flash-261017", // DeepSeek-V4.1-Flash（控制台已勾选开通）
-        baseUrl: "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
-        apiKey: "ARK_API_KEY_REVOKED",
+        model: "deepseek-v4-1-flash-261017", // 实际由代理端 ARK_MODELS 决定（列表首个）
+        baseUrl: "https://1527224965-6vwf8ricpi.ap-beijing.tencentscf.com/chat", // 腾讯云 SCF 代理（函数 URL）+ /chat
+        apiKey: "",
       },
       deepseek: {
         label: "DeepSeek 官方",
         model: "deepseek-flash", // DeepSeek 官方模型：DeepSeek-V4.1-Flash-1017
         baseUrl: "https://api.deepseek.com/chat/completions",
-        apiKey: "DEEPSEEK_API_KEY_REVOKED",
+        apiKey: "",
       },
     },
     maxTokens: 2048,
@@ -108,11 +110,24 @@
     return CONFIG.providers[CONFIG.provider] || CONFIG.providers.ark;
   }
 
+  /* 请求头：key 为空（走 SCF 代理）时不发送 Authorization，避免无意义的预检头 */
+  function getHeaders(cfg) {
+    var h = { "Content-Type": "application/json" };
+    if (cfg.apiKey) h.Authorization = "Bearer " + cfg.apiKey;
+    return h;
+  }
+
   function ask(text) {
     history.push({ role: "user", content: text });
     // 只带上最近 maxHistory 条消息，控制每次请求的 token 消耗
     var windowed = history.slice(-CONFIG.maxHistory);
     var cfg = activeConfig();
+    if (!cfg.baseUrl) {
+      // 代理地址还没填（部署步骤见 docs/scf-ark-proxy-deploy.md）
+      var nop = new Error("proxy not configured");
+      nop.status = 0;
+      return Promise.reject(nop);
+    }
     var payload = {
       model: cfg.model,
       temperature: CONFIG.temperature,
@@ -123,12 +138,15 @@
 
     return fetch(cfg.baseUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + cfg.apiKey,
-      },
+      headers: getHeaders(cfg),
       body: JSON.stringify(payload),
     }).then(function (res) {
+      // 代理在额度用完时自动切换了模型：桌宠头顶冒气泡告知访客
+      if (res.headers.get("X-Proxy-Fallback")) {
+        if (window.Pet && typeof window.Pet.speak === "function") {
+          window.Pet.speak("哎呀~这个模型额度用完了，正在换模型哦", 3200);
+        }
+      }
       if (!res.ok) {
         var err = new Error("HTTP " + res.status);
         err.status = res.status;
