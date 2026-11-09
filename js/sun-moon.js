@@ -687,7 +687,8 @@
       moon: { label: "月亮 · 同步自转", meta: "NASA LRO 月面反照率图 · 平均距地 384,400 km", toggle: "点击切回" },
     };
 
-    var body = "sun";
+    // 手机版开场就是夜晚：默认月亮；电脑版仍默认太阳
+    var body = document.documentElement.classList.contains("mobile") ? "moon" : "sun";
     var switches = 0;
     var trans = null;
 

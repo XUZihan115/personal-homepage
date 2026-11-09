@@ -54,6 +54,9 @@
     phase = next;
     body.classList.toggle("bg-sun", next === "sun");
     body.classList.toggle("bg-moon", next === "moon");
+    // 手机浏览器的状态栏颜色跟着天色走（桌面端本来就是浅色，值不变）
+    var tc = document.querySelector('meta[name="theme-color"]');
+    if (tc) tc.setAttribute("content", next === "moon" ? "#070b1a" : "#e2f6f4");
     // 天色一变，画作跟着换：主页上换卡片里那幅，看画时换全屏那幅
     refreshPainting();
     onIdle(function () {
