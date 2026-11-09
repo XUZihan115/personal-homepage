@@ -46,6 +46,7 @@
     var R = window.Router || {};
     var P = window.Pages || {};
     var T = window.Tools || {};
+    var Sk = window.Skills || {};
     var Mo = window.Mood || {};
     var C = window.CursorFX || {};
     var A = window.Avatar || {};
@@ -69,6 +70,8 @@
     safe("pages", P.init);
     /* ⑧ 项目页小工具：展开面板 + BMI / 温度 / 进制 / 斐波那契计算 */
     safe("tools", T.init);
+    /* ⑧½ 技能与工具：点词条弹出简介 + 维基百科链接 */
+    safe("skills", Sk.init);
     /* ⑨ 天色情绪：日 / 月相衬的底色 +「联想一下」的画作模式 */
     safe("mood", Mo.init);
     /* ⑩ 光标：换一套光标图案（在 CSS 里）+ 划过背景时的涟漪（触屏 / 减少动态效果下自动关） */

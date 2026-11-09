@@ -1249,6 +1249,118 @@ body.bg-sun .muse-btn:hover {
   background: rgba(127, 182, 255, 0.09);
 }
 
+/* 词条可点：加一点可点的暗示（光标、聚焦框、选中态） */
+.tag-clickable {
+  cursor: pointer;
+}
+
+.tag-clickable:focus-visible {
+  outline: 2px solid rgba(127, 182, 255, 0.55);
+  outline-offset: 2px;
+}
+
+.tag.is-open {
+  color: #eaf2ff;
+  border-color: rgba(127, 182, 255, 0.55);
+  background: rgba(127, 182, 255, 0.16);
+}
+
+body.bg-sun .tag.is-open {
+  color: #0d3b3a;
+  border-color: rgba(8, 145, 178, 0.6);
+  background: rgba(8, 145, 178, 0.12);
+}
+
+/* 点词条弹出的小卡片（js/skills.js） */
+.skill-pop {
+  position: fixed;
+  z-index: 940;
+  width: 272px;
+  padding: 14px 15px 13px;
+  border-radius: 14px;
+  border: 1px solid var(--line-strong);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.75;
+  animation: skillPopIn 0.16s ease-out;
+}
+
+.skill-pop[hidden] {
+  display: none;
+}
+
+@keyframes skillPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.skill-pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.skill-pop-title {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.skill-pop-x {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.skill-pop-x:hover {
+  color: var(--text);
+  background: rgba(127, 182, 255, 0.16);
+}
+
+.skill-pop-desc {
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.skill-pop-link {
+  display: inline-block;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(127, 182, 255, 0.45);
+  padding-bottom: 1px;
+}
+
+.skill-pop-link:hover {
+  border-bottom-style: solid;
+}
+
+/* 窄屏：贴底当小卡片，省得超出屏幕 */
+.skill-pop.is-sheet {
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  top: auto;
+  width: auto;
+}
+
 /* ---------- ⑥ 经历（行 3 左列，底部与终端、联想一下对齐） ---------- */
 .card-exp {
   left: calc(50% - 591px);

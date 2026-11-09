@@ -389,7 +389,7 @@
         <article class="proj-card proj-wide">
           <h3>这个主页本身</h3>
           <p class="proj-meta">Vibe Coding · 2026</p>
-          <p>纯 HTML / CSS / JS 从零写起，一版一版改出来的个人主页：可拖拽卡片、汉字笔顺、数码管时钟、太阳与月亮。</p>
+          <p>纯 HTML / CSS / JS 从零写起，一版一版改出来的个人主页：可拖拽卡片、汉字笔顺、数码管时钟、太阳与月亮，还有数字分身和留言板。</p>
           <button class="page-btn ghost proj-toggle" type="button" data-open="tech-detail" aria-expanded="false" aria-controls="tech-detail">看技术细节</button>
           <div class="proj-tool" id="tech-detail" hidden>
             <ol class="detail-list">
@@ -408,6 +408,22 @@
               <li>
                 <h3>太阳与月亮</h3>
                 <p>Three.js 写自定义着色器：太阳是程序化日面加日珥弧环和临边昏暗；月亮用 NASA LRO 反照率贴图现场派生高度，做出月海起伏。点一下就能互换。</p>
+              </li>
+              <li>
+                <h3>多页面路由</h3>
+                <p>首页和五个独立页面装在同一个文件里，用 hash 路由（#/detail、#/projects、#/avatar…）切换，不刷新页面；浏览器前进 / 后退和单页直链都能用，桌面、手机两套版面共用一套脚本。</p>
+              </li>
+              <li>
+                <h3>数字分身</h3>
+                <p>前端只请求阿里云 FC 云函数代理，API Key 放在代理的环境变量里、不进网页。代理按顺序调用火山方舟的六款大模型，某个额度用完或没开通就自动换下一个；主页资料写进系统提示词，当他的知识库。</p>
+              </li>
+              <li>
+                <h3>留言板</h3>
+                <p>接 Supabase 公开数据库，RLS 只放开「读」和「插入」；发布后回读最新列表。断网或没配置时自动退回本机 localStorage，页面不报错。</p>
+              </li>
+              <li>
+                <h3>画廊与昼夜主题</h3>
+                <p>「联想一下」轮播本地画作，支持全屏画作模式（单击换画、双击退出）；点太阳 / 月亮切换整套 CSS 变量，背景、卡片和文字一起换色，偏好记在本地。</p>
               </li>
             </ol>
           </div>
@@ -447,7 +463,7 @@
       <section class="page page-avatar" data-page="avatar" hidden>
         <div class="page-head">
           <h2>数字分身</h2>
-          <p class="page-lead">DeepSeek 大模型做的「数字徐子涵」——他读过这个主页上的全部资料</p>
+          <p class="page-lead">多个大模型轮流兜底的「数字徐子涵」——他读过这个主页上的全部资料</p>
         </div>
         <div class="page-body">
           <p>做过什么、怎么想的、用了什么技术，都能问他。他按主页上的公开资料回答，拿不准的事会老实说不聊。</p>
@@ -484,6 +500,7 @@
     <script src="js/router.js"></script>
     <script src="js/pages.js"></script>
     <script src="js/tools.js"></script>
+    <script src="js/skills.js"></script>
     <script src="js/mood.js?v=4"></script>
     <script src="js/cursor.js"></script>
     <script src="js/avatar-knowledge.js"></script>

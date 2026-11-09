@@ -41,6 +41,8 @@
   var dir = 1; // 当前朝向：1 朝右，-1 朝左
   var running = false; // 正在跑向锚点
   var anchored = false; // 已站在数字分身锚点
+  var pageName = "home"; // 当前路由名，决定说什么话
+  var tourIndex = 0; // 功能导览说到第几句
   var vw = 0;
   var vh = 0;
 
@@ -89,6 +91,13 @@
     }, ms || 2600);
   }
 
+  /* 立刻收起气泡（离开数字分身时用，免得上一页的话跟到下一页） */
+  function silence() {
+    if (!bubble) return;
+    clearTimeout(bubbleTimer);
+    bubble.classList.remove("show");
+  }
+
   function randomLine() {
     var lines = [
       "要不要去数字分身那聊聊？",
@@ -101,14 +110,40 @@
     return lines[Math.floor(Math.random() * lines.length)];
   }
 
-  /* 空闲时偶尔冒一句（不做随机走动） */
+  /* 非数字分身页的「功能导览」：轮着介绍页面里能玩的地方，顺便邀请人试试 */
+  var TOUR_LINES = [
+    "卡片都能拖，摆成你喜欢的样子～",
+    "左上角「归位」一键把卡片摆回去。",
+    "点太阳会变成月亮，整页配色跟着换。",
+    "技能词条点一下，能看到它是什么。",
+    "「联想一下」里能看画，还能全屏。",
+    "留言板留一句，点开的人都能看到。",
+    "名字是逐笔写出来的，等等看。",
+    "想聊两句？去「数字分身」找我。",
+  ];
+
+  function tourLine() {
+    var line = TOUR_LINES[tourIndex % TOUR_LINES.length];
+    tourIndex++;
+    return line;
+  }
+
+  /* 空闲时冒一句：
+     数字分身页偶尔说句闲聊；其他页面说功能导览，邀请人到处看看。 */
   function scheduleIdle() {
     clearTimeout(idleTimer);
     idleTimer = setTimeout(function () {
-      if (running || mode === "dragging") return;
-      if (Math.random() < 0.3) speak(randomLine());
+      if (running || mode === "dragging") {
+        scheduleIdle();
+        return;
+      }
+      if (pageName === "avatar") {
+        if (Math.random() < 0.25) speak(randomLine());
+      } else {
+        speak(tourLine(), 4200);
+      }
       scheduleIdle();
-    }, 3000 + Math.random() * 2500);
+    }, pageName === "avatar" ? 8000 + Math.random() * 6000 : 9000 + Math.random() * 7000);
   }
 
   /* ---------- 拖动 ---------- */
@@ -170,8 +205,10 @@
   /* ---------- 小跑：数字分身页锚点 / 右下角初始位置 ---------- */
 
   /* 通用平滑跑动：只平移（正面图），不做跑步帧动画。
-     from=当前位置，to=(tx,ty)，跑完落定、存位置并冒一句 arriveMsg。 */
-  function runTo(tx, ty, arriveMsg) {
+     from=当前位置，to=(tx,ty)，跑完落定、存位置。
+     arriveMsg 为空就不冒泡（回角落时保持安静）；
+     isAnchor=true 表示终点是数字分身的锚点，记下来供路由判断。 */
+  function runTo(tx, ty, arriveMsg, isAnchor) {
     if (!pet) return;
     measure();
     running = true;
@@ -190,7 +227,7 @@
     setFace(tx >= from.x ? 1 : -1);
 
     function step(now) {
-      var k = Math.min(1, (now - t0) / dur);
+      var k = Math.max(0, Math.min(1, (now - t0) / dur));
       var e = 1 - Math.pow(1 - k, 3);
       pos.x = from.x + (tx - from.x) * e;
       pos.y = from.y + (ty - from.y) * e;
@@ -202,9 +239,9 @@
         pos.y = ty;
         applyPos();
         running = false;
-        anchored = true;
+        anchored = !!isAnchor;
         savePos();
-        speak(arriveMsg, 3200);
+        if (arriveMsg) speak(arriveMsg, 3200);
       }
     }
     rafId = requestAnimationFrame(step);
@@ -215,23 +252,26 @@
     if (!pet) return;
     measure();
     speak("等等我~", 2400);
-    runTo(ANCHOR_RATIO.x * vw, ANCHOR_RATIO.y * vh, "到啦！在这陪你聊天～");
+    runTo(ANCHOR_RATIO.x * vw, ANCHOR_RATIO.y * vh, "到啦！在这陪你聊天～", true);
   }
 
-  /* 离开数字分身页：平滑跑回右下角初始位置（与初始默认位置一致） */
+  /* 离开数字分身页：安静地跑回右下角初始位置，不冒泡 */
   function runToCorner() {
     if (!pet) return;
-    speak("我回角落啦~", 2400);
-    runTo(vw - W / 2 - 26, vh - H / 2 - 40, "拜拜，我先溜啦~");
+    silence();
+    runTo(vw - W / 2 - 26, vh - H / 2 - 40, "", false);
   }
 
   function onRoute(name) {
+    pageName = name;
     if (name === "avatar") {
       runToAnchor();
     } else if (running || anchored) {
-      // 离开数字分身页：跑回右下角初始位置，而不是停在原地
+      /* 只有「从数字分身页出来」才跑回右下角；
+         其他页面之间切换时位置原地不动，用户摆哪儿就留在哪儿。 */
       runToCorner();
     }
+    scheduleIdle();
   }
 
   /* ---------- 初始化 ---------- */
@@ -285,9 +325,10 @@
 
     // 路由挂钩：切到数字分身小跑过去
     if (window.Router && typeof window.Router.onChange === "function") {
+      pageName = (typeof window.Router.current === "function" && window.Router.current()) || "home";
       window.Router.onChange(onRoute);
       // 直接以 #/avatar 打开时也要跑过去
-      if (window.Router.current && window.Router.current() === "avatar") {
+      if (pageName === "avatar") {
         runToAnchor();
       }
     } else {
