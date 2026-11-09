@@ -145,15 +145,15 @@ html.mobile .hintbar {
 }
 
 /* ============================================================
-   6. 数字分身页：手机上不撑满视口，输入框自然跟在对话区下面
+   6. 数字分身页：输入框贴住屏幕底部，「回首页 / 找本人」在它下面
    ------------------------------------------------------------
-   style.css 为了让桌面版「对话框贴底、对话区占满」，把 .page-avatar 做成了
-   纵向 flex、撑到视口高度，输入框 fixed 贴底。手机屏幕矮、还要留出滚动空间，
-   这里覆盖回普通流式排版：对话区高度固定、输入框正常跟在下面。
+   和桌面版一样固定定位：输入框 bottom:74px，两个按钮 bottom:14px
+   （页面最底）。页面底部留出同样的高度，滚到最后一屏也不会被盖住；
+   手机键盘弹出时 fixed 元素会跟着上移，正好停在键盘上方。
    ============================================================ */
 html.mobile .page-avatar {
   min-height: 0;
-  padding-bottom: 0;
+  padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px));
 }
 
 html.mobile .page-avatar .chat {
@@ -163,26 +163,35 @@ html.mobile .page-avatar .chat {
 }
 
 html.mobile .page-avatar .chat-form {
-  position: static;
-  left: auto;
-  bottom: auto;
-  transform: none;
-  z-index: auto;
-  width: auto;
-  margin-top: 11px;
-  padding: 0;
-  border: none;
-  background: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  position: fixed;
+  left: 50%;
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 15;
+  width: min(620px, calc(100vw - 32px));
+  margin: 0;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 html.mobile .page-avatar .page-foot {
-  /* 桌面版是 fixed 贴底（style.css），手机上放回文档流，自然跟在输入框下面 */
-  position: static;
-  left: auto;
-  bottom: auto;
-  transform: none;
-  z-index: auto;
-  margin: 10px 0 0;
+  /* 输入框下面、贴页面最底：回首页 / 找本人 */
+  position: fixed;
+  left: 50%;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 14;
+  margin: 0;
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
+/* 手机版：数字分身页收起桌宠，别挡住聊天输入框（见 js/pet.js） */
+html.mobile .pet.is-hidden {
+  display: none;
 }

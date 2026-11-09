@@ -121,7 +121,7 @@
       "要不要去数字分身那聊聊？",
       "我在这呢～",
       "点我一下试试？",
-      "鼠标拖着我能搬家。",
+      IS_MOBILE ? "手指按住我就能拖走。" : "鼠标拖着我能搬家。",
       "太阳月亮都能切，试试呗。",
       "想知道啥就问数字分身。",
     ];
@@ -133,39 +133,43 @@
   var TOUR = {
     home: IS_MOBILE
       ? [
-          "往下滑，卡片都排在这条长页里～",
+          "这一页是我的名片，从上往下滑就能看全。",
+          "卡片一张接一张：时钟、介绍、技能、经历、日月、画廊。",
           "点月亮能变成太阳，整页配色跟着换。",
-          "技能词条点一下，会告诉你它是什么。",
-          "「联想一下」里能看画，还能全屏。",
+          "技能胶囊点一下，会弹出它是什么、能干什么。",
+          "「联想一下」点「进入画作模式」就能看画，点一下换一张。",
           "名字是逐笔写出来的，写完会再写一遍。",
-          "留言板留一句，点开的人都能看到。",
-          "想聊两句？点顶部「数字分身」找我。",
+          "留言板留一句，点开这个链接的人都能看到。",
         ]
       : [
-          "卡片都能拖，摆成你喜欢的样子～",
-          "左上角「归位」能把卡片一键摆回去。",
+          "这一页是我的名片：六张卡片，摆成三列。",
+          "卡片都能拖，位置我记得住；左上角「归位」一键摆回去。",
           "点月亮能变成太阳，整页配色跟着换。",
-          "技能词条点一下，会告诉你它是什么。",
+          "技能胶囊点一下，会弹出它是什么、能干什么。",
           "「联想一下」里能看画，还能全屏。",
           "名字是逐笔写出来的，写完会再写一遍。",
           "想聊两句？点顶部「数字分身」找我。",
         ],
     detail: [
-      "这里写了我是谁、平时折腾什么。",
-      "编程、乒乓球、数学建模，三件事凑成了这个主页。",
+      "这一页写的是我：大一，智能医学工程。",
+      "学校、专业、年级这些基本信息都在下面。",
+      "编程、乒乓球、数学建模——我平时主要折腾这三件事。",
     ],
     projects: [
-      "这里的 BMI、温度、进制小工具都能直接算。",
-      "「看技术细节」里写了这个主页是怎么做的。",
-      "「打开看看」能跳到课程表这些项目页面。",
+      "这一页是我做过的东西，前几个能直接上手试。",
+      "BMI、温度换算、进制转换，输了数就有结果。",
+      "「看技术细节」里写了这个主页每一块是怎么做的。",
+      "课程表这些成品，点「打开看看」能跳过去。",
     ],
     guestbook: [
-      "留一句吧，点开这个链接的人都能看到。",
-      "昵称可以不填，会显示「匿名」。",
+      "这一页是留言板，公开的，点开链接的人都能看到。",
+      "昵称可以空着，会显示「匿名」。",
+      "连的是 Supabase，断网时先存在你自己的浏览器里。",
     ],
     contact: [
-      "邮箱和 QQ 都在这，想聊可以直接找我。",
-      "下面那只猫，是从木箱缝里探头的那只。",
+      "这一页是我的联系方式：邮箱、QQ、学校。",
+      "想聊直接发邮件，或者加 QQ。",
+      "下面那只猫，是从木箱缝里探头的。",
     ],
   };
 
@@ -322,10 +326,43 @@
     runTo(vw - W / 2 - CORNER_RIGHT, vh - H / 2 - CORNER_BOTTOM, "", false);
   }
 
+  /* 手机版：进数字分身页直接收起桌宠，别挡住聊天输入框 */
+  function hidePet() {
+    if (!pet) return;
+    silence();
+    clearTimeout(idleTimer);
+    clearTimeout(tourTimer);
+    cancelAnimationFrame(rafId);
+    running = false;
+    anchored = false;
+    pet.classList.add("is-hidden");
+  }
+
+  /* 手机版：从数字分身页出来，回到初始（右下角）位置重新出现 */
+  function showPetAtCorner() {
+    if (!pet) return;
+    pet.classList.remove("is-hidden");
+    measure();
+    pos.x = vw - W / 2 - CORNER_RIGHT;
+    pos.y = vh - H / 2 - CORNER_BOTTOM;
+    applyPos();
+    savePos();
+    setFace(1);
+  }
+
   function onRoute(name) {
     pageName = name;
     if (name === "avatar") {
-      runToAnchor();
+      clearTimeout(tourTimer);
+      if (IS_MOBILE) {
+        hidePet();
+      } else {
+        runToAnchor();
+      }
+    } else if (IS_MOBILE) {
+      /* 手机版从数字分身页出来：桌宠回到初始位置重新出现；
+         其他页面之间切换时保持原位不动。 */
+      if (pet && pet.classList.contains("is-hidden")) showPetAtCorner();
     } else if (running || anchored) {
       /* 只有「从数字分身页出来」才跑回右下角；
          其他页面之间切换时位置原地不动，用户摆哪儿就留在哪儿。 */
@@ -333,8 +370,7 @@
     }
     tourIndex = 0; // 每到一个页面，导览从第一句重新说
     if (name === "avatar") {
-      clearTimeout(tourTimer);
-      scheduleIdle();
+      if (!IS_MOBILE) scheduleIdle();
     } else {
       scheduleTour();
     }
@@ -393,18 +429,22 @@
     if (window.Router && typeof window.Router.onChange === "function") {
       pageName = (typeof window.Router.current === "function" && window.Router.current()) || "home";
       window.Router.onChange(onRoute);
-      // 直接以 #/avatar 打开时也要跑过去
+      // 直接以 #/avatar 打开时：电脑端跑过去，手机端直接收起
       if (pageName === "avatar") {
-        runToAnchor();
+        if (IS_MOBILE) hidePet();
+        else runToAnchor();
       }
     } else {
       D.note("pet", { ok: false, error: "没有 Router，桌宠无法挂钩路由" });
     }
 
-    // 开场打声招呼
-    speak("嗨，我在这~", 2400);
-    if (pageName === "avatar") scheduleIdle();
-    else scheduleTour();
+    // 开场打声招呼（手机版在数字分身页不出现，就别冒泡）
+    if (!(IS_MOBILE && pageName === "avatar")) speak("嗨，我在这~", 2400);
+    if (pageName === "avatar") {
+      if (!IS_MOBILE) scheduleIdle();
+    } else {
+      scheduleTour();
+    }
 
     D.note("pet", { ok: true, pos: [Math.round(pos.x), Math.round(pos.y)] });
   }
