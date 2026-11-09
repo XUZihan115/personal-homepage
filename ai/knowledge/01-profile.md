@@ -33,3 +33,15 @@
 - 「可靠性优先于观感：宁可它一直能用，也不要它偶尔好看。」
 - 「真实性优先：一条被静默吞掉的留言，比一条明确失败的留言更糟。」
 - 「改动成本低不等于应该做；没有被要求的行为变化本身就是一种风险。」
+
+## 补充（2026-11-09，本人填写）
+
+- 常驻城市：广东深圳
+- 一句话自我介绍：智能医学工程大一，用 Vibe Coding 把想法做成网页
+- 在上的课程：Project-Based CST & AI Foundations、Calculus I、Linear Algebra、AITLL、Computer Programming
+- 学得最吃力：AITLL；最喜欢：Computer Programming
+- 为什么选智能医学工程：「想用自己的行动为别人带去新的希望。」具体方向本人没展开，不要替他编
+- 转专业 / 考研 / 出国：还没确定
+- 技能程度：HTML / CSS 能独立写完整页面（flex / grid、响应式、CSS 变量换主题）；JavaScript 能写交互、路由、Canvas、调 API；Python 能写小工具和数据处理；Three.js 能改着色器、做日月渲染；Git 每版打 tag、会回退
+- 正在学：医学影像分析
+- 竞赛 / 社团 / 实习 / 志愿：暂无
