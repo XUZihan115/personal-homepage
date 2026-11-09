@@ -85,10 +85,23 @@
 
   /* ---------- 说话气泡 ---------- */
 
+  /* 气泡按文字撑开以后，贴边的桌宠会把气泡顶出视口；
+     量一下宽度，需要时整体往回挪，气泡始终完整可见 */
+  function bubbleShift() {
+    if (!bubble) return 0;
+    measure();
+    var half = bubble.offsetWidth / 2;
+    var gap = 8;
+    if (pos.x - half < gap) return Math.round(gap - (pos.x - half));
+    if (pos.x + half > vw - gap) return Math.round(vw - gap - (pos.x + half));
+    return 0;
+  }
+
   function speak(text, ms) {
     if (!bubble) return;
     bubble.textContent = text;
     bubble.classList.add("show");
+    bubble.style.marginLeft = bubbleShift() + "px";
     clearTimeout(bubbleTimer);
     bubbleTimer = setTimeout(function () {
       bubble.classList.remove("show");

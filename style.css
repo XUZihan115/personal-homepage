@@ -1787,7 +1787,8 @@ body.bg-sun .chat-input {
   left: 50%;
   bottom: 100%;
   transform: translateX(-50%) translateY(6px);
-  max-width: 190px;
+  max-width: min(360px, calc(100vw - 24px));
+  width: max-content;
   padding: 6px 10px;
   font-size: 12px;
   line-height: 1.5;
@@ -1795,7 +1796,8 @@ body.bg-sun .chat-input {
   background: rgba(24, 26, 34, 0.92);
   border: 1px solid rgba(127, 182, 255, 0.28);
   border-radius: 10px;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.2s ease, transform 0.2s ease;
