@@ -5,7 +5,7 @@
  *   - 说话气泡（点一下或空闲时偶尔冒一句）
  *   - 位置记在 localStorage，刷新、切路由都不变
  *   - 路由挂钩：切到「数字分身」(#/avatar) 时，跑到分身页的固定锚点站好，
- *     头顶气泡说「等等我~」；离开数字分身页就自由待机。
+ *     头顶气泡说「等等我~」；离开数字分身页就平滑跑回右下角初始位置。
  *
  * 不做移动/拖动特效（走路帧、跑步帧、拖拽换图已全部去掉）：
  * 侧身走路图和拖拽图是带不透明灰白背景的 AI 素材，一换图就露出灰白方框，
@@ -167,11 +167,11 @@
     speak(randomLine());
   }
 
-  /* ---------- 小跑：切到数字分身页 ---------- */
+  /* ---------- 小跑：数字分身页锚点 / 右下角初始位置 ---------- */
 
-  /* 切到数字分身页时，桌宠平滑跑到固定锚点站好；
-     只平移（正面图），不做跑步帧动画。 */
-  function runToAnchor() {
+  /* 通用平滑跑动：只平移（正面图），不做跑步帧动画。
+     from=当前位置，to=(tx,ty)，跑完落定、存位置并冒一句 arriveMsg。 */
+  function runTo(tx, ty, arriveMsg) {
     if (!pet) return;
     measure();
     running = true;
@@ -179,11 +179,8 @@
     clearTimeout(idleTimer);
     cancelAnimationFrame(rafId);
 
-    // 目标：锚点中心（视口比例换算）—— pos 存的是中心坐标，直接对准
-    var cx = ANCHOR_RATIO.x * vw;
-    var cy = ANCHOR_RATIO.y * vh;
-    var tx = clamp(cx, W / 2, vw - W / 2);
-    var ty = clamp(cy, H / 2, vh - H / 2);
+    tx = clamp(tx, W / 2, vw - W / 2);
+    ty = clamp(ty, H / 2, vh - H / 2);
     var from = { x: pos.x, y: pos.y };
     var dist = Math.sqrt(Math.pow(tx - from.x, 2) + Math.pow(ty - from.y, 2));
     var dur = clamp(dist * 0.9, 650, 1600);
@@ -191,8 +188,6 @@
 
     // 开局朝目标方向走
     setFace(tx >= from.x ? 1 : -1);
-    // 边跑边在头顶冒一句「等等我~」（不写进聊天对话框）
-    speak("等等我~", 2400);
 
     function step(now) {
       var k = Math.min(1, (now - t0) / dur);
@@ -209,21 +204,33 @@
         running = false;
         anchored = true;
         savePos();
-        speak("到啦！在这陪你聊天～", 3200);
+        speak(arriveMsg, 3200);
       }
     }
     rafId = requestAnimationFrame(step);
+  }
+
+  /* 切到数字分身页时，桌宠平滑跑到固定锚点站好 */
+  function runToAnchor() {
+    if (!pet) return;
+    measure();
+    speak("等等我~", 2400);
+    runTo(ANCHOR_RATIO.x * vw, ANCHOR_RATIO.y * vh, "到啦！在这陪你聊天～");
+  }
+
+  /* 离开数字分身页：平滑跑回右下角初始位置（与初始默认位置一致） */
+  function runToCorner() {
+    if (!pet) return;
+    speak("我回角落啦~", 2400);
+    runTo(vw - W / 2 - 26, vh - H / 2 - 40, "拜拜，我先溜啦~");
   }
 
   function onRoute(name) {
     if (name === "avatar") {
       runToAnchor();
     } else if (running || anchored) {
-      // 离开数字分身页：恢复自由待机
-      running = false;
-      anchored = false;
-      cancelAnimationFrame(rafId);
-      scheduleIdle();
+      // 离开数字分身页：跑回右下角初始位置，而不是停在原地
+      runToCorner();
     }
   }
 
