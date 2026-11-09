@@ -9,7 +9,7 @@
  * 期末报告素材：
  *   - 模型厂商：火山方舟（火山引擎）承载 DeepSeek-V4.1-Flash
  *   - 模型型号：deepseek-v4-1-flash-261017（控制台开通）
- *   - 接口：腾讯云 SCF Web 函数代理 → https://ark.cn-beijing.volces.com/api/v3/chat/completions
+ *   - 接口：阿里云 FC 事件函数代理 → https://ark.cn-beijing.volces.com/api/v3/chat/completions
  *   - 接入方式：前端 → 云函数代理（免费额度 100万次调用/月）→ 方舟
  *   - 知识库：与 ai/ 目录同步，改动资料时两处都要改，以 ai/ 为基准
  */
@@ -19,7 +19,7 @@
   var D = window.__DIAG || { note: function () {}, err: function () {} };
 
   /* ================= 配置区 =================
-     注意：密钥已全部迁到腾讯云 SCF 代理的环境变量（ARK_API_KEY），
+     注意：密钥已全部迁到阿里云 FC 代理的环境变量（ARK_API_KEY），
      前端这里不再放任何 key；baseUrl 指向部署好的代理地址。
 
      双接入点：默认走火山方舟（provider: "ark"），DeepSeek 官方配置原样保留，
@@ -32,7 +32,7 @@
       ark: {
         label: "火山方舟",
         model: "deepseek-v4-1-flash-261017", // 实际由代理端 ARK_MODELS 决定（列表首个）
-        baseUrl: "https://1527224965-6vwf8ricpi.ap-beijing.tencentscf.com/chat", // 腾讯云 SCF 代理（函数 URL）+ /chat
+        baseUrl: "https://ark-proxy-pevypymehk.cn-beijing.fcapp.run/chat", // 阿里云 FC 代理（函数 URL）+ /chat
         apiKey: "",
       },
       deepseek: {
