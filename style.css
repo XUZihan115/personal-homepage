@@ -1352,6 +1352,14 @@ body.bg-sun .tag.is-open {
   border-bottom-style: solid;
 }
 
+/* 两条百科链接竖着排：百度在上，维基在下 */
+.skill-pop-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
 /* 窄屏：贴底当小卡片，省得超出屏幕 */
 .skill-pop.is-sheet {
   left: 14px;

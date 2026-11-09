@@ -1,7 +1,7 @@
 /* js/skills.js —— 「技能与工具」词条点击简介
  *
  * 首页那张「技能与工具」卡片里每个胶囊都是一个词条。点一下弹出一张小卡片：
- * 先用一两句话说清它是什么，末尾给一条维基百科链接，想深挖就点进去。
+ * 先用一两句话说清它是什么，末尾给百度百科和维基百科两条链接（百度在上），想深挖就点进去。
  *
  * 几个约定：
  *   - 文案、链接都放在下面的 DATA 里，想加词条只改这里；HTML 只留 <span class="tag">名字</span>。
@@ -16,6 +16,7 @@
   var D = window.__DIAG || { note: function () {}, err: function () {}, errors: [] };
 
   var WIKI = "https://zh.wikipedia.org/wiki/";
+  var BAIKE = "https://baike.baidu.com/search/word?word=";
 
   /* ---------- 词条数据 ---------- */
 
@@ -23,38 +24,47 @@
     HTML: {
       desc: "网页的骨架。用一对对标签描述标题、段落、图片和链接，浏览器照着标签把内容排出来。",
       wiki: "HTML",
+      baike: "HTML",
     },
     CSS: {
       desc: "层叠样式表，管网页长什么样：颜色、字号、间距、布局和动画都在这里写。",
       wiki: "层叠样式表",
+      baike: "CSS",
     },
     JavaScript: {
       desc: "网页的脚本语言。拖动卡片、切换页面、和大模型对话，背后跑的都是它。",
       wiki: "JavaScript",
+      baike: "JavaScript",
     },
     "Git 版本控制": {
       desc: "分布式版本控制系统。每改一次就留一个快照，写坏了能退回上一版，也能开分支试新想法。",
       wiki: "Git",
+      baike: "Git",
     },
     "Vibe Coding": {
       desc: "用自然语言把想法讲给 AI，边聊边改，直接做出能跑的东西——这个主页就是这么一版一版写出来的。",
       wiki: "https://en.wikipedia.org/wiki/Vibe_coding",
+      baike: "Vibe Coding",
     },
     "Prompt 迭代": {
       desc: "反复调整给模型的提示词——补背景、给例子、限定格式——直到输出稳定地接近想要的结果。",
       wiki: "提示工程",
+      baike: "提示工程",
     },
     "数据分析基础": {
       desc: "清洗、统计、画图，从一堆数字里找出规律和异常，再反过来检查假设站不站得住。",
       wiki: "数据分析",
+      baike: "数据分析",
     },
     "智能医学工程": {
       desc: "医学、工程与人工智能交叉的专业方向，用技术手段解决诊断、治疗和健康管理里的问题。",
       wiki: "生物医学工程",
+      baike: "智能医学工程",
     },
     "原型验证": {
       desc: "先做一个能跑的最小版本，快速验证想法行不行，再根据反馈一版一版往上加。",
       wiki: "软件原型",
+      baike: "原型验证",
     },
   };
 
@@ -63,6 +73,7 @@
   var pop = null;
   var popTitle = null;
   var popDesc = null;
+  var popBaike = null;
   var popLink = null;
   var activeTag = null;
 
@@ -90,13 +101,22 @@
 
     popDesc = el("p", "skill-pop-desc");
 
+    var links = el("div", "skill-pop-links");
+
+    popBaike = el("a", "skill-pop-link", "去百度百科看看 ↗");
+    popBaike.target = "_blank";
+    popBaike.rel = "noopener noreferrer";
+
     popLink = el("a", "skill-pop-link", "去维基百科看看 ↗");
     popLink.target = "_blank";
     popLink.rel = "noopener noreferrer";
 
+    links.appendChild(popBaike);
+    links.appendChild(popLink);
+
     pop.appendChild(head);
     pop.appendChild(popDesc);
-    pop.appendChild(popLink);
+    pop.appendChild(links);
     document.body.appendChild(pop);
 
     document.addEventListener("keydown", function (e) {
@@ -159,6 +179,7 @@
     activeTag = tag;
     popTitle.textContent = key;
     popDesc.textContent = item.desc;
+    popBaike.href = BAIKE + encodeURIComponent(item.baike || key);
     popLink.href = /^https?:/i.test(item.wiki) ? item.wiki : encodeURI(WIKI + item.wiki);
 
     tag.classList.add("is-open");
