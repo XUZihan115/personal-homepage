@@ -42,7 +42,8 @@
   var running = false; // 正在跑向锚点
   var anchored = false; // 已站在数字分身锚点
   var pageName = "home"; // 当前路由名，决定说什么话
-  var tourIndex = 0; // 功能导览说到第几句
+  var tourIndex = 0; // 当前页功能导览说到第几句
+  var tourTimer = null; // 功能导览的下一条定时器
   var vw = 0;
   var vh = 0;
 
@@ -110,40 +111,72 @@
     return lines[Math.floor(Math.random() * lines.length)];
   }
 
-  /* 非数字分身页的「功能导览」：轮着介绍页面里能玩的地方，顺便邀请人试试 */
-  var TOUR_LINES = [
-    "卡片都能拖，摆成你喜欢的样子～",
-    "左上角「归位」一键把卡片摆回去。",
-    "点太阳会变成月亮，整页配色跟着换。",
-    "技能词条点一下，能看到它是什么。",
-    "「联想一下」里能看画，还能全屏。",
-    "留言板留一句，点开的人都能看到。",
-    "名字是逐笔写出来的，等等看。",
-    "想聊两句？去「数字分身」找我。",
-  ];
+  /* 非数字分身页的「功能导览」：
+     每个页面一套句子，按顺序轮着说，指出哪里能玩、点哪里。 */
+  var TOUR = {
+    home: [
+      "卡片都能拖，摆成你喜欢的样子～",
+      "左上角「归位」能把卡片一键摆回去。",
+      "点太阳会变成月亮，整页配色跟着换。",
+      "技能词条点一下，会告诉你它是什么。",
+      "「联想一下」里能看画，还能全屏。",
+      "名字是逐笔写出来的，写完会再写一遍。",
+      "想聊两句？点顶部「数字分身」找我。",
+    ],
+    detail: [
+      "这里写了我是谁、平时折腾什么。",
+      "编程、乒乓球、数学建模，三件事凑成了这个主页。",
+    ],
+    projects: [
+      "这里的 BMI、温度、进制小工具都能直接算。",
+      "「看技术细节」里写了这个主页是怎么做的。",
+      "「打开看看」能跳到课程表这些项目页面。",
+    ],
+    guestbook: [
+      "留一句吧，点开这个链接的人都能看到。",
+      "昵称可以不填，会显示「匿名」。",
+    ],
+    contact: [
+      "邮箱和 QQ 都在这，想聊可以直接找我。",
+      "下面那只猫，是从木箱缝里探头的那只。",
+    ],
+  };
 
-  function tourLine() {
-    var line = TOUR_LINES[tourIndex % TOUR_LINES.length];
+  var TOUR_GAP_MIN = 6500; // 两句之间最短隔多久
+  var TOUR_GAP_MAX = 10000;
+
+  function tourLines() {
+    return TOUR[pageName] || TOUR.home;
+  }
+
+  /* 按顺序取下一句，说完一轮再从头开始 */
+  function nextTourLine() {
+    var lines = tourLines();
+    var line = lines[tourIndex % lines.length];
     tourIndex++;
     return line;
   }
 
-  /* 空闲时冒一句：
-     数字分身页偶尔说句闲聊；其他页面说功能导览，邀请人到处看看。 */
+  /* 非数字分身页：进页面 2.6 秒先说第一句，之后每 6.5~10 秒说下一句 */
+  function scheduleTour() {
+    clearTimeout(tourTimer);
+    if (pageName === "avatar") return;
+    var delay = tourIndex === 0
+      ? 2600
+      : TOUR_GAP_MIN + Math.random() * (TOUR_GAP_MAX - TOUR_GAP_MIN);
+    tourTimer = setTimeout(function () {
+      if (!running && mode !== "dragging") speak(nextTourLine(), 4600);
+      scheduleTour();
+    }, delay);
+  }
+
+  /* 数字分身页：偶尔冒一句闲聊，别打扰聊天 */
   function scheduleIdle() {
     clearTimeout(idleTimer);
     idleTimer = setTimeout(function () {
-      if (running || mode === "dragging") {
-        scheduleIdle();
-        return;
-      }
-      if (pageName === "avatar") {
-        if (Math.random() < 0.25) speak(randomLine());
-      } else {
-        speak(tourLine(), 4200);
-      }
+      if (!running && mode !== "dragging" && Math.random() < 0.25) speak(randomLine());
       scheduleIdle();
-    }, pageName === "avatar" ? 8000 + Math.random() * 6000 : 9000 + Math.random() * 7000);
+    }, 9000 + Math.random() * 7000);
   }
 
   /* ---------- 拖动 ---------- */
@@ -271,7 +304,13 @@
          其他页面之间切换时位置原地不动，用户摆哪儿就留在哪儿。 */
       runToCorner();
     }
-    scheduleIdle();
+    tourIndex = 0; // 每到一个页面，导览从第一句重新说
+    if (name === "avatar") {
+      clearTimeout(tourTimer);
+      scheduleIdle();
+    } else {
+      scheduleTour();
+    }
   }
 
   /* ---------- 初始化 ---------- */
@@ -337,7 +376,8 @@
 
     // 开场打声招呼
     speak("嗨，我在这~", 2400);
-    if (!anchored && !running) scheduleIdle();
+    if (pageName === "avatar") scheduleIdle();
+    else scheduleTour();
 
     D.note("pet", { ok: true, pos: [Math.round(pos.x), Math.round(pos.y)] });
   }

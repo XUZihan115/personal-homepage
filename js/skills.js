@@ -36,9 +36,9 @@
       desc: "分布式版本控制系统。每改一次就留一个快照，写坏了能退回上一版，也能开分支试新想法。",
       wiki: "Git",
     },
-    "AI 辅助开发": {
-      desc: "把大语言模型当成结对程序员：让它写初稿、查报错、改需求，自己负责判断和验收。",
-      wiki: "大语言模型",
+    "Vibe Coding": {
+      desc: "用自然语言把想法讲给 AI，边聊边改，直接做出能跑的东西——这个主页就是这么一版一版写出来的。",
+      wiki: "https://en.wikipedia.org/wiki/Vibe_coding",
     },
     "Prompt 迭代": {
       desc: "反复调整给模型的提示词——补背景、给例子、限定格式——直到输出稳定地接近想要的结果。",
@@ -159,7 +159,7 @@
     activeTag = tag;
     popTitle.textContent = key;
     popDesc.textContent = item.desc;
-    popLink.href = encodeURI(WIKI + item.wiki);
+    popLink.href = /^https?:/i.test(item.wiki) ? item.wiki : encodeURI(WIKI + item.wiki);
 
     tag.classList.add("is-open");
     tag.setAttribute("aria-expanded", "true");
