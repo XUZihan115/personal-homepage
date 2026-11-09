@@ -20,7 +20,10 @@
 
   var D = window.__DIAG || { note: function () {}, err: function () {} };
 
-  var STORE_KEY = "xh_pet_pos"; // {x,y} 相对视口的像素坐标（桌宠中心）
+  var STORE_KEY = "xh_pet_pos"; // {x,y,v} 相对视口的像素坐标（桌宠中心）
+  var POS_VERSION = 2; // 位置记录版本：旧版本（没有 v 字段）作废，改用新的默认位置
+  var CORNER_RIGHT = 146; // 默认停在右下角时，桌宠右边缘离视口右缘的距离（原来 26，往左挪 120）
+  var CORNER_BOTTOM = 40; // 桌宠下边缘离视口下缘的距离
   var ANCHOR_RATIO = { x: 0.243, y: 0.3 }; // 数字分身页的固定锚点（视口比例）
 
   // 素材：只用透明背景的正面待机图（侧身走路/拖拽素材背景不透明，已弃用）
@@ -68,7 +71,7 @@
     try {
       localStorage.setItem(
         STORE_KEY,
-        JSON.stringify({ x: Math.round(pos.x), y: Math.round(pos.y) })
+        JSON.stringify({ x: Math.round(pos.x), y: Math.round(pos.y), v: POS_VERSION })
       );
     } catch (e) {
       /* 隐私模式等写不了就跳过 */
@@ -292,7 +295,7 @@
   function runToCorner() {
     if (!pet) return;
     silence();
-    runTo(vw - W / 2 - 26, vh - H / 2 - 40, "", false);
+    runTo(vw - W / 2 - CORNER_RIGHT, vh - H / 2 - CORNER_BOTTOM, "", false);
   }
 
   function onRoute(name) {
@@ -336,7 +339,7 @@
       var raw = localStorage.getItem(STORE_KEY);
       if (raw) {
         var p = JSON.parse(raw);
-        if (typeof p.x === "number" && typeof p.y === "number") {
+        if (p && p.v === POS_VERSION && typeof p.x === "number" && typeof p.y === "number") {
           pos.x = clamp(p.x, W / 2, vw - W / 2);
           pos.y = clamp(p.y, H / 2, vh - H / 2);
         }
@@ -345,8 +348,8 @@
       /* 读不到就落默认 */
     }
     if (!pos.x && !pos.y) {
-      pos.x = vw - W / 2 - 26; // 中心离右缘留 26px
-      pos.y = vh - H / 2 - 40; // 中心离下缘留 40px
+      pos.x = vw - W / 2 - CORNER_RIGHT;
+      pos.y = vh - H / 2 - CORNER_BOTTOM;
     }
 
     applyPos();
