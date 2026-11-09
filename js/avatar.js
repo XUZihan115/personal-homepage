@@ -136,24 +136,43 @@
       messages: [{ role: "system", content: KNOWLEDGE }].concat(windowed),
     };
 
+    // 真正的超时控制：超过 timeoutMs 未返回就中止请求
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () {
+      ctrl.abort();
+    }, CONFIG.timeoutMs);
+
     return fetch(cfg.baseUrl, {
       method: "POST",
       headers: getHeaders(cfg),
       body: JSON.stringify(payload),
-    }).then(function (res) {
-      // 代理在额度用完时自动切换了模型：桌宠头顶冒气泡告知访客
-      if (res.headers.get("X-Proxy-Fallback")) {
-        if (window.Pet && typeof window.Pet.speak === "function") {
-          window.Pet.speak("哎呀~这个模型额度用完了，正在换模型哦", 3200);
+      signal: ctrl.signal,
+    })
+      .then(function (res) {
+        clearTimeout(timer);
+        // 代理在额度用完时自动切换了模型：桌宠头顶冒气泡告知访客
+        if (res.headers.get("X-Proxy-Fallback")) {
+          if (window.Pet && typeof window.Pet.speak === "function") {
+            window.Pet.speak("哎呀~这个模型额度用完了，正在换模型哦", 3200);
+          }
         }
-      }
-      if (!res.ok) {
-        var err = new Error("HTTP " + res.status);
-        err.status = res.status;
-        return Promise.reject(err);
-      }
-      return res.json();
-    });
+        if (!res.ok) {
+          var err = new Error("HTTP " + res.status);
+          err.status = res.status;
+          return Promise.reject(err);
+        }
+        return res.json();
+      })
+      .catch(function (err) {
+        clearTimeout(timer);
+        if (err && err.name === "AbortError") {
+          var t = new Error("request timeout");
+          t.status = 0;
+          t.timeout = true;
+          throw t;
+        }
+        throw err;
+      });
   }
 
   function onSend(e) {
@@ -175,7 +194,12 @@
           reply = "";
         }
         reply = (reply || "").trim();
-        if (!reply) throw { status: 0 };
+        if (!reply) {
+          var e2 = new Error("empty reply");
+          e2.status = 0;
+          e2.empty = true; // 模型思考把 token 占满没说出话，不是网络问题
+          throw e2;
+        }
         if (t1.parentNode) t1.parentNode.removeChild(t1);
         say("bot", reply);
         history.push({ role: "assistant", content: reply });
@@ -184,7 +208,13 @@
       .catch(function (err) {
         if (t1.parentNode) t1.parentNode.removeChild(t1);
         var status = err && err.status ? err.status : 0;
-        say("bot err", humanError(status));
+        if (err && err.timeout) {
+          say("bot err", "分身想得太久了，先把这题放一放，再问一次？");
+        } else if (err && err.empty) {
+          say("bot err", "分身刚走神了，没说出话来，再问一次？");
+        } else {
+          say("bot err", humanError(status));
+        }
         // 请求失败了，这条 user 消息不该留在历史里，否则下次会重复计费
         if (history.length && history[history.length - 1].role === "user") history.pop();
         D.note("avatar", { req: "fail", status: status });
