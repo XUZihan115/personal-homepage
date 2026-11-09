@@ -687,8 +687,8 @@
       moon: { label: "月亮 · 同步自转", meta: "NASA LRO 月面反照率图 · 平均距地 384,400 km", toggle: "点击切回" },
     };
 
-    // 手机版开场就是夜晚：默认月亮；电脑版仍默认太阳
-    var body = document.documentElement.classList.contains("mobile") ? "moon" : "sun";
+    // 电脑版和手机版一样：开场都是夜晚的月亮，点一下切到太阳
+    var body = "moon";
     var switches = 0;
     var trans = null;
 
@@ -1203,17 +1203,17 @@
       D.note("celestial", { mode: "webgl", body: body, arcs: arcs.length, elapsed: Number(elapsed.toFixed(1)) });
     }
 
-    setOpacity(sunGroup, 1);
-    setOpacity(moonGroup, 0);
-    moonMesh.visible = false;
-    moonGlow.visible = false;
+    // 开场按当前 body 摆好：默认月亮（点一下才切太阳）
+    var moonFirst = body === "moon";
+    setOpacity(sunGroup, moonFirst ? 0 : 1);
+    setOpacity(moonGroup, moonFirst ? 1 : 0);
     setScale(null, 1);
     paintLabels();
     window.requestAnimationFrame(loop);
 
     D.note("celestial", {
       mode: "webgl",
-      body: "sun",
+      body: body,
       bumps: moonMat.uniforms.uBump.value,
       moonMap: "1024x512",
       textures: "textures/ (NASA LRO) + 程序化日面",

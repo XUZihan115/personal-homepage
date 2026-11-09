@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="徐子涵的个人主页 —— 可拖拽模块 · 汉字笔顺 · 太阳与月亮" />
-    <meta name="theme-color" content="#e2f6f4" />
+    <meta name="theme-color" content="#070b1a" />
     <title>徐子涵 · 个人主页</title>
     <link rel="stylesheet" href="style.css?v=6" />
 
@@ -27,7 +27,7 @@
     <meta name="twitter:description" content="可拖拽模块 · 汉字笔顺 · 太阳与月亮 —— 用 WebGL 做的日面与月面。" />
     <meta name="twitter:image" content="https://xuzihan115.github.io/personal-homepage/assets/monet-impression-sunrise.jpg" />
   </head>
-  <body class="bg-sun">
+  <body class="bg-moon">
     <!-- ===== 背景：淡网格 + 光晕（色调跟着太阳 / 月亮走） ===== -->
     <div class="backdrop" aria-hidden="true">
       <div class="grid"></div>
@@ -132,17 +132,17 @@
       </section>
 
       <!-- ③ 太阳 / 月亮（模块三：点击切换，太阳自转 + 日珥，月亮带环形山） -->
-      <section class="card card-celestial module is-sun" id="celestial" data-card="celestial">
+      <section class="card card-celestial module is-moon" id="celestial" data-card="celestial">
         <div class="card-label">
-          <span id="celestialLabel">太阳 · 自转中</span>
-          <span class="label-right dim" id="celestialToggle">点击切换</span>
+          <span id="celestialLabel">月亮 · 同步自转</span>
+          <span class="label-right dim" id="celestialToggle">点击切回</span>
         </div>
         <div class="canvas-wrap">
           <canvas id="celestialCanvas" width="320" height="230"></canvas>
           <div class="celestial-fallback" id="celestialFallback" hidden></div>
         </div>
         <div class="celestial-meta">
-          <span id="celestialMeta">日面约 5,500 °C · 自转一周约 25 天</span>
+          <span id="celestialMeta">NASA LRO 月面反照率图 · 平均距地 384,400 km</span>
         </div>
       </section>
 
@@ -511,7 +511,7 @@
     <footer class="hintbar">
       <span>拖动卡片可自由摆放，点左上角「归位」还原</span>
       <span class="sep" aria-hidden="true">·</span>
-      <span>点一下太阳会变成月亮</span>
+      <span>点一下月亮会变成太阳</span>
       <span class="sep" aria-hidden="true">·</span>
       <span>© <span id="year">2026</span> 徐子涵</span>
     </footer>
@@ -520,7 +520,7 @@
     <script src="js/diag.js"></script>
     <script src="js/three.min.js"></script>
     <script src="js/hanzi.js"></script>
-    <script src="js/sun-moon.js?v=2"></script>
+    <script src="js/sun-moon.js?v=4"></script>
     <script src="js/modules.js"></script>
     <script src="js/router.js"></script>
     <script src="js/pages.js"></script>
@@ -530,7 +530,7 @@
     <script src="js/cursor.js"></script>
     <script src="js/avatar-knowledge.js"></script>
     <script src="js/avatar.js"></script>
-    <script src="js/pet.js?v=5"></script>
+    <script src="js/pet.js?v=6"></script>
     <script src="script.js"></script>
   </body>
 </html>
