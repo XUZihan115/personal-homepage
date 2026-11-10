@@ -2598,6 +2598,23 @@ body.bg-sun .chat-input {
   text-decoration: underline;
 }
 
+/* 联系页 QQ 二维码：占位框（等本人提供二维码图后替换 src）
+   图片没放进来时，虚线框 + 提示文字兜底，不至于显示破图 */
+.contact-qr-li {
+  align-items: center;
+}
+
+.contact-qr {
+  display: block;
+  width: 150px;
+  height: 150px;
+  border-radius: var(--radius);
+  border: 1px dashed var(--line-strong);
+  background:
+    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.03) 10px, rgba(255, 255, 255, 0.03) 20px);
+  object-fit: contain;
+}
+
 /* 联系页下面那只探头的猫 */
 .contact-cat {
   display: flex;

@@ -13,7 +13,7 @@
 ## 联系方式（本人愿意公开的）
 
 - 邮箱：xzh_080115@tju.edu.cn
-- QQ：2941923433
+- QQ：通过主页「联系」页扫码添加（不公开 QQ 号）
 - 个人主页：https://xuzihan115.github.io/personal-homepage/
 - GitHub：https://github.com/XUZihan115
 

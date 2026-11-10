@@ -625,8 +625,7 @@
       [{ t: "$ contact", c: "cmd" }],
       [
         { t: "xzh_080115@tju.edu.cn", c: "key" },
-        { t: " / ", c: "out" },
-        { t: "QQ 2941923433", c: "key" },
+        { t: " / 扫码加QQ（见联系页）", c: "out" },
       ],
     ];
 

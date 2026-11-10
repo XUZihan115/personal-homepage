@@ -41,6 +41,7 @@
   var mode = "idle"; // idle | dragging | running
   var bubbleTimer = null;
   var idleTimer = null;
+  var contactLoopTimer = null; // 联系页循环气泡的定时器
   var rafId = null;
   var dir = 1; // 当前朝向：1 朝右，-1 朝左
   var running = false; // 正在跑向锚点
@@ -116,6 +117,30 @@
     bubble.classList.remove("show");
   }
 
+  /* 联系页的循环气泡：进联系页时，介绍（TOUR.contact）说完之后，
+     只循环显示「QQ扫码与本人联系」这一条，不再说别的（见 onRoute）。 */
+  var CONTACT_LOOP_MSG = "QQ扫码与本人联系";
+  var CONTACT_LOOP_INTERVAL = 9000; // 循环间隔
+
+  function contactLoop() {
+    if (pageName !== "contact") return;
+    speak(CONTACT_LOOP_MSG, 2600);
+    clearTimeout(contactLoopTimer);
+    contactLoopTimer = setTimeout(contactLoop, CONTACT_LOOP_INTERVAL);
+  }
+
+  /* 导览说完后启动循环（首次延迟 = 导览停留时长，导览一结束就冒第一条） */
+  function startContactLoop() {
+    stopContactLoop();
+    if (pageName !== "contact") return;
+    contactLoopTimer = setTimeout(contactLoop, TOUR_DURATION + 400);
+  }
+
+  function stopContactLoop() {
+    clearTimeout(contactLoopTimer);
+    contactLoopTimer = null;
+  }
+
   function randomLine() {
     var lines = [
       "要不要去数字分身那聊聊？",
@@ -148,7 +173,7 @@
       "这一页是公开留言板：昵称可以空着，写一句点开链接的人都能看到，断网时先存在你自己的浏览器里。",
     ],
     contact: [
-      "这一页是我的联系方式：邮箱、QQ、学校；想聊直接发邮件或加 QQ，下面那只猫是从木箱缝里探头的。",
+      "想找本人聊可以直接发邮件或扫码加QQ",
     ],
   };
 
@@ -237,7 +262,8 @@
 
   function onClick() {
     if (running || mode === "dragging") return;
-    speak(randomLine());
+    /* 联系页只允许这一条气泡，循环显示；其他页面正常随机一句 */
+    speak(pageName === "contact" ? CONTACT_LOOP_MSG : randomLine());
   }
 
   /* ---------- 小跑：数字分身页锚点 / 右下角初始位置 ---------- */
@@ -326,6 +352,11 @@
 
   function onRoute(name) {
     pageName = name;
+    /* 联系页：介绍结束后循环冒「QQ扫码与本人联系」，只这一条；
+       离开联系页就停。放在分支外面，桌面/手机、动不动都生效。 */
+    if (name === "contact") startContactLoop();
+    else stopContactLoop();
+
     if (name === "avatar") {
       clearTimeout(tourTimer);
       if (IS_MOBILE) {
@@ -417,6 +448,8 @@
       if (!IS_MOBILE) scheduleIdle();
     } else {
       scheduleTour();
+      /* 直接以 #/contact 打开时，也要启动联系页循环气泡 */
+      if (pageName === "contact") startContactLoop();
     }
 
     D.note("pet", { ok: true, pos: [Math.round(pos.x), Math.round(pos.y)] });

@@ -152,14 +152,15 @@ html.mobile .hintbar {
    手机键盘弹出时 fixed 元素会跟着上移，正好停在键盘上方。
    ============================================================ */
 html.mobile .page-avatar {
-  min-height: 0;
-  padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px));
+  min-height: calc(100svh - 95px); /* 撑满一屏：让位后剩下的全给聊天区，聊天区底部正好贴住发送框顶部 */
+  padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); /* 发送框 + 底部按钮让位 */
 }
 
 html.mobile .page-avatar .chat {
-  height: 240px;
+  flex: 1 1 auto;
+  height: auto;
   max-height: none;
-  flex: none;
+  min-height: 240px;
 }
 
 html.mobile .page-avatar .chat-form {
