@@ -847,6 +847,10 @@
             sunModelLoaded = true;
             sunGroup.remove(sunMesh);
             sunMesh = null; // 原球体退役，sunMat 变量保留（日珥/切换动画还要用）
+            // GLB 是异步加载的：初始 setOpacity 在加载完成前执行，模型加入时
+            // 若默认 visible=true 会在月球模式下透出红色太阳残影（用户看到的「月球上的红点」）。
+            // 必须按当前 body 立刻应用一次透明度状态。
+            setOpacity(sunGroup, body === "moon" ? 0 : 1);
             D.note("celestial", { sunModel: "sun-3d-model.glb", loaded: true });
           },
           undefined,
