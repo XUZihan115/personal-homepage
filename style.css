@@ -2583,7 +2583,8 @@ body.bg-sun .chat-input {
 
 .ct-key {
   flex: none;
-  width: 46px;
+  width: 68px;
+  white-space: nowrap;
   color: var(--dim);
   font-size: 12px;
   letter-spacing: 0.12em;
@@ -2598,20 +2599,24 @@ body.bg-sun .chat-input {
   text-decoration: underline;
 }
 
-/* 联系页 QQ 二维码：占位框（等本人提供二维码图后替换 src）
-   图片没放进来时，虚线框 + 提示文字兜底，不至于显示破图 */
-.contact-qr-li {
-  align-items: center;
+/* 联系页 QQ 二维码：原图直出，不做重采样，保证可扫
+   白底 + 实线框，浅色彩码在深色页面上要靠白底保证对比度 */
+.contact-list li.contact-qr-li {
+  align-items: flex-start;
+  padding: 10px 2px 16px;
+}
+
+.contact-qr-li .ct-key {
+  padding-top: 6px;
 }
 
 .contact-qr {
   display: block;
-  width: 150px;
-  height: 150px;
+  width: 200px;
+  height: 200px;
   border-radius: var(--radius);
-  border: 1px dashed var(--line-strong);
-  background:
-    repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255, 255, 255, 0.03) 10px, rgba(255, 255, 255, 0.03) 20px);
+  border: 1px solid var(--line-strong);
+  background: #fff;
   object-fit: contain;
 }
 
