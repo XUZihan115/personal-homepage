@@ -137,15 +137,6 @@
 - 用的是站内同一个衬线字体（`--serif`）：作品名大一号，作者小一号并降低不透明度。
 - 画面底部压了一层自下而上的渐暗（`.painting-veil`），保证深色画面上的白字也读得清。
 
-## 联系页的猫（`assets/cat-peek.jpg`）
-
-| 文件 | 来源 | 处理 |
-| --- | --- | --- |
-| `assets/cat-peek.jpg` (512×768) | 本人提供 | 无，原图直接用 |
-
-- 放在联系页最下面当装饰，和别处的素材无关，也不引任何外链。
-- 桌面上显示 190px 宽、窄屏 148px；只是张静态图，点它不会发生什么。
-
 ## 字体
 
 - **Playfair Display**（`fonts/playfair-display-latin-500-600.woff2`、`fonts/playfair-display-latin-italic-500.woff2`）
