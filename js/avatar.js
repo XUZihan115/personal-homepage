@@ -175,6 +175,56 @@
       });
   }
 
+  /* ============ 无关话题本地拦截：不请求模型，直接省 token ============ */
+  var OFFTOPIC_REPLY = "这个问题貌似和我的主人并不相关，Kimi 的 Token 真的很贵的[哭]";
+
+  var ON_TOPIC = [
+    "子涵", "zihan", "主人", "分身", "主页", "网站", "页面", "这个站",
+    "项目", "代码", "编程", "程序", "网页", "前端", "后端", "html", "css", "js", "javascript",
+    "python", "vibe", "ai", "大模型", "模型", "token", "three", "canvas", "着色器",
+    "太阳", "月亮", "日月", "天文", "nasa", "sdo", "星空",
+    "乒乓球", "数学建模", "建模", "竞赛", "奖",
+    "留言", "联系", "邮箱", "qq", "github", "微信",
+    "jenny", "在意",
+    "智能医学", "医学", "脑机", "天津大学", "港理工", "深圳", "大学", "专业", "课程", "cst", "aitll",
+    "笔顺", "桌宠", "宠物", "音乐", "歌", "主题", "深色", "浅色", "性格", "兴趣", "爱好",
+    "经历", "技能", "学习", "考试", "转专业", "考研", "出国", "实习", "社团", "影像",
+    "许愿池", "迭代", "五周", "四个版本", "supabase"
+  ];
+
+  var OFF_TOPIC_TERMS = [
+    "辛亥革命", "鸦片战争", "甲午", "五四运动", "文化大革命", "文革", "改革开放",
+    "三国", "秦始皇", "唐朝", "宋朝", "明朝", "清朝", "汉朝", "民国",
+    "二战", "第一次世界大战", "抗日战争", "解放战争",
+    "五羟基色胺", "血清素", "多巴胺", "内啡肽", "光合作用", "细胞", "病毒", "dna", "疫苗",
+    "牛顿", "爱因斯坦", "相对论", "量子", "微积分", "导数", "积分", "三角函数", "欧姆定律",
+    "元素周期表", "化学式", "摩尔",
+    "股票", "基金", "比特币", "房价", "天气预报", "新闻联播", "总统", "首相"
+  ];
+
+  /* 判断：明显与主人/主页无关 → true（本地直接回，不调模型） */
+  function looksOffTopic(raw) {
+    var t = (raw || "").toLowerCase().replace(/\s+/g, " ").trim();
+    if (!t) return false;
+    // 纯算式或符号
+    if (/^[\d.,，。+\-*/×÷^()（）=＝?？!！\s]+$/.test(t)) return true;
+    if (/\d+\s*[+\-*/×÷]\s*\d+\s*(=|等于|是多少|等于多少|得多少)/.test(t)) return true;
+    // 明确的百科 / 时政 / 科学名词
+    for (var i = 0; i < OFF_TOPIC_TERMS.length; i++) {
+      if (t.indexOf(OFF_TOPIC_TERMS[i]) !== -1) return true;
+    }
+    // 考问式开场
+    if (/(你知道|你了解|你听说过|你懂|你知不知道)/.test(t)) return true;
+    // 命中主人 / 主页相关实体 → 正常走模型
+    for (var j = 0; j < ON_TOPIC.length; j++) {
+      if (t.indexOf(ON_TOPIC[j]) !== -1) return false;
+    }
+    // 直接问分身本人
+    if (/^(你|您|他|主人|子涵)/.test(t)) return false;
+    // 通用百科式问法
+    if (/(什么是|何为|是什么|为什么|为啥|如何|怎么|多少|哪一年|什么意思|定义|原理)/.test(t) && t.length >= 6) return true;
+    return false;
+  }
   function onSend(e) {
     if (e) e.preventDefault();
     var text = (input.value || "").trim();
@@ -184,7 +234,13 @@
     say("me", text);
     var t1 = sayTyping();
     setBusy(true);
-    var t0 = Date.now();
+    if (looksOffTopic(text)) {
+      if (t1.parentNode) t1.parentNode.removeChild(t1);
+      say("bot", OFFTOPIC_REPLY);
+      D.note("avatar", { req: "offtopic" });
+      setBusy(false);
+      return;
+    }    var t0 = Date.now();
     ask(text)
       .then(function (data) {
         var reply = "";
@@ -233,7 +289,7 @@
       return;
     }
     form.addEventListener("submit", onSend);
-    say("bot", "你好呀，我是徐子涵主页上的数字分身。他做过什么、怎么想的、用的什么技术，都能问我。想聊点啥？");
+    say("bot", "你好呀，我是主人徐子涵的数字分身。他做过什么、怎么想的、用的什么技术，都能问我。想聊点啥？");
     setBusy(false);
     D.note("avatar", {
       ok: true,
