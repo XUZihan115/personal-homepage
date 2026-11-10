@@ -809,6 +809,56 @@
     var sunMesh = new THREE.Mesh(new THREE.SphereGeometry(R, 64, 48), sunMat);
     sunGroup.add(sunMesh);
 
+    // 3D 太阳模型（GLB）：从下载的太阳系模型里提取（assets/sun-3d-model.glb），
+    // 已归一化到半径 R。场景没有灯光，标准材质会全黑，所以把贴图当自发光贴图用
+    // （太阳本来就是光源）。拿不到（file:// 直开 / 断网 / 跨域 / 老浏览器）就保留
+    // 上面的程序化球体，页面依然完整 —— 和 SDO 球面贴图同一套「渐进增强」策略。
+    var sunModel = null;
+    var sunModelLoaded = false;
+    if (THREE.GLTFLoader) {
+      try {
+        new THREE.GLTFLoader().load(
+          "assets/sun-3d-model.glb",
+          function (gltf) {
+            var m = gltf.scene || gltf.scenes[0];
+            if (!m) {
+              D.note("celestial", { sunModel: "glb-empty" });
+              return;
+            }
+            m.traverse(function (o) {
+              if (o.isMesh) {
+                o.frustumCulled = false;
+                if (o.material) {
+                  var ms = Array.isArray(o.material) ? o.material : [o.material];
+                  for (var i = 0; i < ms.length; i++) {
+                    var mat = ms[i];
+                    mat.emissiveMap = mat.map;
+                    mat.emissive = new THREE.Color(0xffffff);
+                    mat.emissiveIntensity = 1.0;
+                    mat.transparent = true;
+                    mat.depthWrite = false;
+                    mat.needsUpdate = true;
+                  }
+                }
+              }
+            });
+            sunGroup.add(m);
+            sunModel = m;
+            sunModelLoaded = true;
+            sunGroup.remove(sunMesh);
+            sunMesh = null; // 原球体退役，sunMat 变量保留（日珥/切换动画还要用）
+            D.note("celestial", { sunModel: "sun-3d-model.glb", loaded: true });
+          },
+          undefined,
+          function (e) {
+            D.note("celestial", { sunModel: "glb-error", msg: (e && e.message) || String(e) });
+          }
+        );
+      } catch (e) {
+        D.note("celestial", { sunModel: "glb-exception", msg: String(e) });
+      }
+    }
+
     /* 日冕光晕 —— 「发光灯泡感」的另一个来源。
        原来这张贴图中心是 alpha 0.95 的白光，正压在日面正中央，
        刚做出来的米粒组织和临边昏暗全被它冲平了。
@@ -1047,7 +1097,18 @@
         sunGlow.material.opacity = 0.95 * v;
         for (var i = 0; i < arcs.length; i++) arcs[i].mat.uniforms.uOpacity.value = 0.85 * v;
         pMat.opacity = 0.92 * v;
-        sunMesh.visible = v > 0.02;
+        if (sunModel) {
+          // GLB 模型：整个组 + 材质透明度一起淡入淡出
+          sunModel.visible = v > 0.02;
+          sunModel.traverse(function (o) {
+            if (o.isMesh && o.material) {
+              var ms = Array.isArray(o.material) ? o.material : [o.material];
+              for (var k = 0; k < ms.length; k++) ms[k].opacity = v;
+            }
+          });
+        } else if (sunMesh) {
+          sunMesh.visible = v > 0.02;
+        }
         sunGlow.visible = v > 0.02;
         points.visible = v > 0.02;
         for (var j = 0; j < arcs.length; j++) arcs[j].mesh.visible = v > 0.02;
