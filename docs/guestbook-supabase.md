@@ -1,5 +1,10 @@
 # 留言板改成「公开可见」的操作手册（Supabase 免费层）
 
+> **换库记录（2026-11-10）**：旧项目 `qgmqoorithwrniatgyvx` 因长期闲置被 Supabase 删除（域名 NXDOMAIN，症状「暂时连不上留言库」）。
+> 已重建新项目并执行下文 SQL，`js/pages.js` 已更新为新地址与公开 key（commit `fc00741`，已上线）。
+> 新项目 ref：`mhyhjdlovdnbsyrxrhrh`。保活 Action（`.github/workflows/keep-guestbook-alive.yml`）每次自动从 `js/pages.js` 读 URL 与 key，换库后无需改动。
+> 注意：本机命令行（curl / Node / Invoke-WebRequest）直连 `*.supabase.co` 会被重置（SNI 干扰），但浏览器请求正常，排障请用浏览器或无头 Chrome 验证。
+
 改之前：留言存在浏览器自己的 localStorage 里，只有你自己那台电脑看得到。
 改之后：留言存在 Supabase 的免费数据库里，**点开链接的人都能看到、都能发**，
 昵称仍然可以留空（留空显示「匿名」），不需要注册、不需要登录。
