@@ -1,9 +1,9 @@
 /* js/avatar.js —— 数字分身（独立页面 #/avatar，不再是主页上的卡片）
  *
- * 做法：前端先请求腾讯云 SCF 代理（scf-ark-proxy，见 docs/scf-ark-proxy-deploy.md），
+ * 做法：前端先请求阿里云函数计算（FC）代理（见 docs/scf-ark-proxy-deploy.md），
  * 代理再转发火山方舟 OpenAI 兼容接口。API Key 只存在云函数环境变量里，
  * 前端源码不再携带任何密钥。
- * 数字分身的全部秘密都在下面这份 KNOWLEDGE 里：系统提示词 + 四份知识库，
+ * 数字分身的全部秘密都在下面这份 KNOWLEDGE 里：系统提示词 + 六份知识库，
  * 每次提问时作为 system 消息发给模型 —— 不是微调，是「资料 + 提示词 + 边界规则」。
  *
  * 期末报告素材：
@@ -49,7 +49,7 @@
   };
 
   /* ================= 知识库 =================
-     内容在 js/avatar-knowledge.js（系统提示词 + 四份资料，以 ai/ 目录为基准），
+     内容在 js/avatar-knowledge.js（系统提示词 + 六份资料，以 ai/ 目录为基准），
      avatar-knowledge.js 必须在 avatar.js 之前加载。 */
   var KNOWLEDGE = window.AVATAR_KNOWLEDGE || "";
 
@@ -110,7 +110,7 @@
     return CONFIG.providers[CONFIG.provider] || CONFIG.providers.ark;
   }
 
-  /* 请求头：key 为空（走 SCF 代理）时不发送 Authorization，避免无意义的预检头 */
+  /* 请求头：key 为空（走 FC 代理）时不发送 Authorization，避免无意义的预检头 */
   function getHeaders(cfg) {
     var h = { "Content-Type": "application/json" };
     if (cfg.apiKey) h.Authorization = "Bearer " + cfg.apiKey;
@@ -177,6 +177,9 @@
 
   /* ============ 无关话题本地拦截：不请求模型，直接省 token ============ */
   var OFFTOPIC_REPLY = "这个问题貌似和我的主人并不相关，Kimi 的 Token 真的很贵的[哭]";
+  /* 连续第 3 次被拦之后换这句：告诉访客确实拦在前端，没产生任何调用 */
+  var OFFTOPIC_STREAK_REPLY = "真的不要试啦，信息都被拦截在前端了，这样不会消耗Token的。";
+  var offTopicStreak = 0; // 连续被本地拦截的次数（问到正经话题就清零）
 
   var ON_TOPIC = [
     "子涵", "zihan", "主人", "分身", "主页", "网站", "页面", "这个站",
@@ -202,6 +205,19 @@
     "股票", "基金", "比特币", "房价", "天气预报", "新闻联播", "总统", "首相"
   ];
 
+  /* 主页里真实出现过的技术 / 概念名词：问到它们就是「聊主页」，放行给模型正常解释，
+     不能再被「什么是 xxx」这种通用问法误杀（例如「什么是 CSS」「HTML 是干嘛的」）。 */
+  var TECH_TERMS = [
+    "html", "css", "javascript", "js", "python", "three.js", "three", "webgl", "着色器", "shader",
+    "canvas", "api", "json", "http", "https", "git", "github", "pwa", "supabase", "数据库",
+    "前端", "后端", "全栈", "域名", "部署", "框架", "响应式", "flex", "grid", "路由", "缓存",
+    "react", "vue", "next.js", "vite", "npm", "node",
+    "大模型", "llm", "提示词", "prompt", "知识库", "微调", "token", "算法", "数组", "函数",
+    "循环", "递归", "变量", "浏览器", "服务器", "云函数", "阿里云", "火山引擎", "方舟",
+    "网站", "网页", "页面", "字体", "无障碍", "动效", "3d", "glb", "贴图", "纹理",
+    "笔顺", "数码管", "时钟", "主题", "深色", "浅色", "桌宠", "留言板", "二维码"
+  ];
+
   /* 判断：明显与主人/主页无关 → true（本地直接回，不调模型） */
   function looksOffTopic(raw) {
     var t = (raw || "").toLowerCase().replace(/\s+/g, " ").trim();
@@ -209,10 +225,18 @@
     // 纯算式或符号
     if (/^[\d.,，。+\-*/×÷^()（）=＝?？!！\s]+$/.test(t)) return true;
     if (/\d+\s*[+\-*/×÷]\s*\d+\s*(=|等于|是多少|等于多少|得多少)/.test(t)) return true;
+    // 「帮我算一下 128*37」这种口语化算式
+    if (/\d+\s*[+\-*/×÷]\s*\d+/.test(t) && /(算|多少|等于)/.test(t)) return true;
     // 明确的百科 / 时政 / 科学名词
     for (var i = 0; i < OFF_TOPIC_TERMS.length; i++) {
       if (t.indexOf(OFF_TOPIC_TERMS[i]) !== -1) return true;
     }
+    // 主页里出现过的技术名词 → 属于聊主页，放行（含「你知道什么是 HTML 吗」这类开场）
+    for (var k = 0; k < TECH_TERMS.length; k++) {
+      if (t.indexOf(TECH_TERMS[k]) !== -1) return false;
+    }
+    // 「我是谁」问的是访客自己，不是百科题，不能按考问式拦掉
+    if (/(我是谁|我是哪位|猜猜我是|你知道我是|你知道你是谁)/.test(t)) return false;
     // 考问式开场
     if (/(你知道|你了解|你听说过|你懂|你知不知道)/.test(t)) return true;
     // 命中主人 / 主页相关实体 → 正常走模型
@@ -235,12 +259,17 @@
     var t1 = sayTyping();
     setBusy(true);
     if (looksOffTopic(text)) {
+      offTopicStreak += 1;
       if (t1.parentNode) t1.parentNode.removeChild(t1);
-      say("bot", OFFTOPIC_REPLY);
-      D.note("avatar", { req: "offtopic" });
+      // 前两次用原话术；连续第 3 次起明说「拦在前端、不花钱」
+      say("bot", offTopicStreak >= 3 ? OFFTOPIC_STREAK_REPLY : OFFTOPIC_REPLY);
+      D.note("avatar", { req: "offtopic", streak: offTopicStreak });
       setBusy(false);
       return;
-    }    var t0 = Date.now();
+    }
+    offTopicStreak = 0; // 问到正经话题，连续计数清零
+
+    var t0 = Date.now();
     ask(text)
       .then(function (data) {
         var reply = "";
