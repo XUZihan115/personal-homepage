@@ -703,6 +703,83 @@ body.muse .painting-credit {
     padding: 0 clamp(20px, 3vw, 34px) clamp(16px, 2.4vh, 28px) 0;
   }
 }
+/* ---------- 竖屏画作里的「转手机」提示 ----------
+   手机竖屏进画作模式时，画是横着铺的（见上面那段媒体查询），竖着拿只能看到裁过的中间部分。
+   这里在顶部闪一个胶囊提示，2 秒多自己淡出；只在触屏竖屏下出现，横屏和桌面根本不渲染。
+   · 不跟着画旋转 —— 它是给「正着拿手机」的人看的，跟着转就成侧躺字了。
+   · 纯 CSS 动画：body.muse 加上/去掉时元素在 display:none 与可见之间切换，
+     浏览器会重新播放动画，所以每次进画作模式都会闪一次，不需要 JS。
+   · pointer-events: none，绝不挡单击换画 / 双击退出。 */
+.muse-rotate-hint {
+  display: none;
+}
+
+@media (max-width: 900px) and (orientation: portrait) and (pointer: coarse) {
+  body.muse .muse-rotate-hint {
+    display: flex;
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 20px);
+    left: 50%;
+    z-index: 3;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 15px 8px 12px;
+    border-radius: 999px;
+    background: rgba(10, 12, 18, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 12.5px;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+    animation: museRotateHint 3s ease 0.6s both;
+  }
+
+  .muse-rotate-hint svg {
+    width: 15px;
+    height: 15px;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.9;
+  }
+}
+
+/* 提示的生命周期：淡入 → 停一会儿 → 淡出并轻微上飘，最后停在 opacity: 0（both）。 */
+@keyframes museRotateHint {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-6px);
+  }
+  14% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-6px);
+  }
+}
+
+/* 关了动效的人：不做淡入淡出，提示直接静止展示，退出画作模式才消失 */
+@media (max-width: 900px) and (orientation: portrait) and (pointer: coarse) and (prefers-reduced-motion: reduce) {
+  body.muse .muse-rotate-hint {
+    animation: none;
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
 /* 画作模式：主页上除左上角「归位」以外的都收起来 */
 body.muse .topbar,
 body.muse .stage,

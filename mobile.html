@@ -6,7 +6,7 @@
     <meta name="description" content="徐子涵的个人主页 —— 手机版 · 汉字笔顺 · 太阳与月亮" />
     <meta name="theme-color" content="#070b1a" />
     <title>徐子涵 · 个人主页</title>
-    <link rel="stylesheet" href="style.css?v=11" />
+    <link rel="stylesheet" href="style.css?v=12" />
     <!-- 手机版专有的收尾调整：管的是 style.css 在窄屏下没管干净的地方（见文件内注释） -->
     <link rel="stylesheet" href="mobile.css?v=6" />
 
@@ -62,6 +62,13 @@
         <span class="art-artist" id="artArtist"></span>
       </figcaption>
     </figure>
+
+    <!-- 竖屏画作提示：画是横着铺满的，闪一下提醒可以把手机转过来（只对触屏竖屏生效，
+         纯 CSS 控制，2 秒左右自己淡出，不挡任何点击） -->
+    <div class="muse-rotate-hint" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 0 1-14.6 5.9" /><path d="M5.5 12A8.5 8.5 0 0 1 20.1 6.1" /><path d="M20.3 2.6v3.9h-3.9" /><path d="M3.7 21.4v-3.9h3.9" /></svg>
+      <span>横过手机，画面更完整</span>
+    </div>
 
     <!-- ===== 左上角：卡片归位（每次刷新页面也都从这里的位置开始） ===== -->
     <button class="nav-reset corner-reset" id="resetLayout" type="button" title="所有卡片回到初始位置" aria-label="所有卡片回到初始位置">
