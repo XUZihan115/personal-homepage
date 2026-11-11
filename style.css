@@ -665,6 +665,44 @@ body.muse .painting-credit {
   }
 }
 
+/* ---------- 手机竖屏：把画作横过来铺满（等效横屏全屏） ----------
+
+   竖屏 390×844 上直接 cover 一幅 16:9 的横画，会被放大到只剩中间约四分之一，
+   旗子、人物全被切在边缘。这里把画作层（画 + 暗角）和署名一起旋转 90°：
+   画布先按「横屏尺寸」摆好再转回来，视觉上正好填满竖屏，而画本身是按横屏比例裁的，
+   等于把手机横过来看到的那个画面。
+
+   · 只对触屏 + 竖屏 + 窄屏生效；手机一横过来媒体查询就失效，自动回到普通铺满。
+   · rotate 写在 .painting-layer 而不是 .painting 上：.painting 自己要用 transform: scale()
+     做淡入放大，两套 transform 写在同一个元素上会互相覆盖。
+   · 100dvh / 100dvw 是为了跟着移动端地址栏伸缩；不支持的老浏览器用上面那行 vh/vw 兜底。 */
+@media (max-width: 900px) and (orientation: portrait) and (pointer: coarse) {
+  .painting-layer,
+  .painting-credit,
+  body.muse .painting-credit {
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    width: 100vh;
+    height: 100vw;
+    width: 100dvh;
+    height: 100dvw;
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
+
+  /* 署名跟着一起转，并且要贴住「横屏的右下角」——原来靠 bottom: 0 定位，
+     改成一个撑满画布的 flex 容器，把文字推到右下 */
+  .painting-credit {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: stretch;
+    max-width: none;
+    padding: 0 clamp(20px, 3vw, 34px) clamp(16px, 2.4vh, 28px) 0;
+  }
+}
 /* 画作模式：主页上除左上角「归位」以外的都收起来 */
 body.muse .topbar,
 body.muse .stage,
