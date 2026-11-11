@@ -787,6 +787,17 @@ body.muse .hintbar {
   display: none !important;
 }
 
+/* 桌宠同样收起来：它 z-index 600，会压住右下角的「退出」按钮和画作署名，
+   横屏手机上最明显（「出」字被小人挡掉一半）。
+   用淡出而不是 display:none —— 画作是 0.9s 淡入的，桌宠「啪」一下消失太跳。
+   visibility 那 0.25s 延迟是为了让淡出播完再真正不可见、不可点。 */
+body.muse .pet {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+
 body.muse .corner-reset {
   background: rgba(12, 12, 16, 0.72);
   border-color: rgba(255, 255, 255, 0.2);
@@ -1881,6 +1892,8 @@ body.bg-sun .chat-input {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+  /* 进出画作模式时淡入淡出（画作模式下的隐藏规则见上方 body.muse .pet） */
+  transition: opacity 0.25s ease;
 }
 
 .pet.dragging {
